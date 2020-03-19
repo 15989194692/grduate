@@ -13,18 +13,21 @@ return: distance,path
     path:到某个节点最短距离的路径
 '''
 def dijkstra(node, maps, list):
+    print("开始计算源节点%s的数据..." %node.id)
     size = len(maps)
-    distance = np.full(size, -1)
-
+    distance = []
+    path = []
+    for i in range(0, size):
+        path.append([])
+        distance.append(-1)
+    #标记已访问的节点
     vis = np.zeros(size, dtype='int16')
 
     index = node.id
     distance[index] = 0
     toNodes = node.toNodes
-    path = []
-    for i in range(0, size):
-        path.append([])
 
+    #当前的路径
     cur_path = []
 
     for i in range(1, size):
@@ -45,7 +48,9 @@ def dijkstra(node, maps, list):
                 id = toNode.id
                 #如果从这个节点到某个节点的距离更短，更新距离
                 if distance[id] < 0 or (dist + toNodes[toNodeKey]) < distance[id]:
+                    #更新最短距离
                     distance[id] = dist + toNodes[toNodeKey]
+                    #更新最短路径
                     path[id] = cur_path.copy()
                     path[id].append(id)
         #在所有的未访问的节点中找到距离最小的那个节点
@@ -60,7 +65,6 @@ def dijkstra(node, maps, list):
         #         toNodes = maps[key].toNodes
         toNodes = maps[list[index]].toNodes
         # print(distance)
-
     return distance,path
 
 
@@ -99,8 +103,7 @@ if __name__ == "__main__":
     # for key in maps:
     #     print(maps[key])
     list = ['01', '02', '03', '04', '05']
-    distance,path = dijkstra(node0, maps, list)
+    # distance,path = dijkstra(node0, maps, list)
+    DataInit.init_data(maps, list)
 
-    print(distance)
-    print(path)
 

@@ -15,13 +15,17 @@ import json
 
 #将某个节点到另外的节点的路径保存到txt文件zhong
 #比如0.txt即为0号节点到其他节点的路径文件
-def write_data_to_txt(list,file_path):
+def write_pathdata_to_txt(path, file_path):
     with open(file_path, 'w') as f:
-        for l in list:
-            f.write(str(l) + '\n')
+        for p in path:
+            f.write(str(p) + '\n')
+
+def write_distancedata_to_txt(distance, file_path):
+    with open(file_path, 'w') as f:
+        f.write(str(distance))
 
 #读取某个路径下的txt文件，并将其封装成list类型返回
-def read_data_from_txt(file_path):
+def read_pathdata_from_txt(file_path):
     with open(file_path, 'r') as f:
         lines = f.readlines()
 
@@ -31,9 +35,18 @@ def read_data_from_txt(file_path):
 
     return path
 
+def read_distancedata_from_txt(file_path):
+    with open(file_path, 'r') as f:
+        lines = f.readlines()
+
+    for line in lines:
+        distance = json.loads(line)
+
+    return distance
+
 
 if __name__ == "__main__":
-    write_data_to_txt([[1,3,5], [2,3,4,6]], "paths/0.txt")
+    write_pathdata_to_txt([[1,3,5], [2,3,4,6]], "paths/0.txt")
     # data, rows = get_data_from_xlsx()
     # for i in range(rows):
     #     for col in data:

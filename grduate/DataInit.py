@@ -31,7 +31,7 @@ class StreetNode(object):
 input:
     可以把数据进行处理
 '''
-def data2map(START_X = 114, END_X = 114.2, START_Y = 22.45, END_Y = 22.6):
+def data2map():
     data, rows = DataOperate.get_data_from_xlsx()
 
     lengths = data[0]
@@ -46,8 +46,8 @@ def data2map(START_X = 114, END_X = 114.2, START_Y = 22.45, END_Y = 22.6):
     list = []
 
     for i in range(1, rows):
-        # if (not is_validate(start_x[i], start_y[i])):
-        #     continue;
+        if not (is_validate(start_x[i], start_y[i]) and is_validate(end_x[i], end_y[i])):
+            continue;
         fromnode = str(fromnodes[i])
         # print("fromnode : %s, tonode : %s" %(fromnode, tos[i]))
         if not fromnode in maps.keys():
@@ -67,21 +67,27 @@ def is_validate(x, y, START_X = 114, END_X = 114.2, START_Y = 22.45, END_Y = 22.
 '''
 def init_data():
     #拿到所有的街道节点
-    stree_nodes, list = data2map()
+    street_nodes, list = data2map()
     #节点的个数
-    size = len(stree_nodes)
+    size = len(street_nodes)
+    print("拿到所有的街道节点数据,共有%s个节点，下面开始写入文件中..." %size)
 
     #将计算得到的数据写入到txt文件中
-    for key in stree_nodes:
-        node = stree_nodes[key]
-        distance, path = Dijkstra.dijkstra(node, stree_nodes, list)
-        file_path = "distances/" + str(node.id) + ".txt"
-        DataOperate.write_data_to_txt(distance,file_path)
-        file_path = "paths/" + str(node.id) + ".txt"
-        DataOperate.write_data_to_txt(path, file_path)
+    for key in street_nodes:
+        node = street_nodes[key]
+        distance, path = Dijkstra.dijkstra(node, street_nodes, list)
+        print(type(distance))
+        print("拿到第%s节点的数据，开始写入到对应文件中.." %node.id)
+        file_path = "distances/distance" + str(node.id) + ".txt"
+        print("%s文件写入完成" %file_path)
+        DataOperate.write_distancedata_to_txt(distance, file_path)
+        file_path = "paths/path" + str(node.id) + ".txt"
+        print("%s文件写入完成" % file_path)
+        DataOperate.write_distancedata_to_txt(path, file_path)
 
 
 
 
 if __name__ == "__main__":
     init_data()
+
