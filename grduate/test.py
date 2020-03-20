@@ -1,20 +1,19 @@
 import DataOperate
+import Utils
+from timeit import default_timer as timer
 
 if __name__ == "__main__":
-    paths = []
-    distances = []
-    file_path1 = "paths/path"
-    file_path2 = "distances/distance"
-    for i in range(0, 3):
-        path = DataOperate.read_pathdata_from_txt(file_path1 + str(i) + ".txt")
-        paths.append(path[0])
-        distance = DataOperate.read_distancedata_from_txt(file_path2 + str(i) + ".txt")
-        distances.append(distance)
+    start_time = timer()
+    path = Utils.get_path(0, 1245)
+    end_time = timer()
+    print(end_time - start_time)
+    print(path)
 
-    print("源节点%s到节点%s的最短距离为：" %(0, 765))
-    print(distances[0][765])
-    print("源节点%s到节点%s的最短路径为：" %(0, 765))
-    print(paths[0][765])
+    # print(end_time - start_time)
+    # print("源节点%s到节点%s的最短距离为：" %(0, 765))
+    # print(distances[29][765])
+    # print("源节点%s到节点%s的最短路径为：" %(0, 765))
+    # print(paths[29][765])
 
 
 

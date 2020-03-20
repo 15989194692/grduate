@@ -1,33 +1,14 @@
 import DataOperate
 import numpy as np
 import Dijkstra
+from StreetNode import StreetNode
+from Car import Car
+import Utils
 
-'''
-街道节点：
-    id:每个节点的id标识
-    fromnode:xlsx文件中节点的位置，这里不用这个作为id标识
-    x:经度
-    y:纬度
-'''
-class StreetNode(object):
-
-    count = 0;
-
-    def __init__(self,fromnode, x, y):
-        self.id = StreetNode.count
-        StreetNode.count += 1
-
-        self.fromnode = fromnode
-        self.x = x
-        self.y = y
-        #能到达的节点集合
-        self.toNodes = {}
-
-    def __str__(self):
-        return ("id : %s,fromnode : %s,x : %s, y : %s, toNodes : %s" % (self.id,self.fromnode, self.x, self.y, self.toNodes))
 '''
 将街道节点保存到map中
-深圳市南山区的经纬度x = 113.92, y = 22.52
+深圳市罗湖区&福田区的经纬度大概范围为：
+    START_X = 114, END_X = 114.2, START_Y = 22.45, END_Y = 22.6
 input:
     可以把数据进行处理
 '''
@@ -85,9 +66,31 @@ def init_data():
         print("%s文件写入完成" % file_path)
         DataOperate.write_distancedata_to_txt(path, file_path)
 
+#初始化1200辆车的起始位置
+def init_car():
+    L = []
+    count = 0
+    cars = []
+    while count < 1200:
+        Lc = Utils.random_id()
+        if L.count(Lc) > 0:
+            continue
+        car = Car(Lc, 3, -1, 10000)
+        cars.append(car)
+        count += 1
+
+    return cars
 
 
 
 if __name__ == "__main__":
-    init_data()
+    # init_data()
+    # maps, list = data2map()
+    # print(len(maps))
+    cars = init_car()
+    for car in cars:
+        print(car)
+
+
+
 

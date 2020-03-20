@@ -26,23 +26,28 @@ def write_distancedata_to_txt(distance, file_path):
 
 #读取某个路径下的txt文件，并将其封装成list类型返回
 def read_pathdata_from_txt(file_path):
+    paths = []
     with open(file_path, 'r') as f:
-        lines = f.readlines()
+        # lines = f.readlines()
+        for line in f:
+            paths.append(json.loads(line))
 
-    path = []
-    for line in lines:
-        path.append(json.loads(line))
+    # paths = []
+    # for line in lines:
+    #     paths.append(json.loads(line))
 
-    return path
+    return paths
 
 def read_distancedata_from_txt(file_path):
     with open(file_path, 'r') as f:
-        lines = f.readlines()
+        # lines = f.readlines()
+        for line in f:
+            distances = json.loads(line)
 
-    for line in lines:
-        distance = json.loads(line)
+    # for line in lines:
+    #     distance = json.loads(line)
 
-    return distance
+    return distances
 
 
 if __name__ == "__main__":
