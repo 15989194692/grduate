@@ -5,17 +5,19 @@
     Lc(街道节点编号):当前位置
     Pc:当前乘客人数
     Ld(街道节点编号):出租车当前目的地
+    Ts([requestid, ...]):当前车辆乘客能忍受因为拼车的新乘客所产生的时延
     B:电池剩余电量
 """
 class Car(object):
     count = 0
-    def __init__(self, Lc, Pc, Ld, B):
+    def __init__(self, Lc, Pc, Ld, Ts, B):
         self.id = Car.count
         Car.count += 1
 
         self.Lc = Lc
         self.Pc = Pc
         self.Ld = Ld
+        self.Ts = Ts
         self.B = B
 
     def __str__(self):

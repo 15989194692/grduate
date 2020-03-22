@@ -4,6 +4,7 @@ import Dijkstra
 from StreetNode import StreetNode
 from Car import Car
 import Utils
+import os,pprint
 
 '''
 将街道节点保存到map中
@@ -82,15 +83,31 @@ def init_car():
     return cars
 
 
+'''
+创建3425个空的txt文件
+'''
+def create_empty_txt():
+    # 将文件目录指定到新建的文件目录下
+    os.chdir('D:/pyCharm/py_workspace/grduate/carstates')
+    print(os.getcwd())  # 确认当前目录
+
+    # 用open函数创建文件
+    # 使用join拼写目录
+    for i in range(0, 3425):
+        a = os.path.join('D:/pyCharm/py_workspace/grduate/carstates', "carstate" +str(i) + '.txt')
+        c = open(a, 'w')
+
+    # 遍历文件夹下的所有文件
+    print(os.listdir())
 
 if __name__ == "__main__":
     # init_data()
     # maps, list = data2map()
     # print(len(maps))
-    cars = init_car()
-    for car in cars:
-        print(car)
-
+    # cars = init_car()
+    # for car in cars:
+    #     print(car)
+    create_empty_txt()
 
 
 
