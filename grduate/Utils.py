@@ -82,9 +82,11 @@ def get_distances():
     return distances
 
 '''
-拿到某个节点的车辆状态表([carid, arrive_datetime, person_customer, is_inhere])
+拿到某个节点的车辆状态表([车辆id, 到达的时间, 车上的乘客人数, 是否为目的地(0:否，1:是)])
     input:
         sourcedId:节点编号
+    output:
+        carstate:某个节点的车辆状态表[车辆id, 到达的时间, 车上的乘客人数, 是否为目的地(0:否，1:是)]
 '''
 def get_carstate(sourcedId):
     with open("carstates/carstate" + str(sourcedId) + ".txt", 'r') as f:
@@ -94,8 +96,8 @@ def get_carstate(sourcedId):
         update = False
         for line in f:
             state = ast.literal_eval(line.rstrip("\n"))
-            #判断是否在这个节点and大于当前系统时间，若在该节点或大于系统时间，表示这条数据是有效的,若其中有一条数据是无效的，需要更新车辆状态表
-            if state[3] ==0 and state[1] >= now_datetime:
+            #判断目的地是否在这个节点or大于当前系统时间，若在该节点或大于系统时间，表示这条数据是有效的,若其中有一条数据是无效的，需要更新车辆状态表
+            if state[3] == 0 or state[1] >= now_datetime:
                 carstate.append(state)
             else:
                 update = True
@@ -115,6 +117,43 @@ def update_carstate(sourcedId, carstate):
     with open(file_path, 'w') as f:
         for state in carstate:
             f.write(str(state) + '\n')
+
+'''
+将pathj_Ld路径上的节点的carid车辆的状态删除
+    input:
+        pathj_Ld:Gj节点到车辆原来的目的地的路径
+        carid:车辆id
+'''
+def remove_carstate(pathj_Ld, carid):
+    for Gc in pathj_Ld:
+        new_carstate = []
+        with open("carstates/carstate" + Gc + ".txt", 'r') as f:
+            for line in f:
+                state = ast.literal_eval(line.rstrip("\n"))
+                if state[0] != carid:
+                    new_carstate.append(state)
+        update_carstate(Gc, new_carstate)
+
+'''
+将共享路径上的节点的车辆状态表增加车牌为carid的记录
+'''
+def add_carstate(share_path, carid, Gj):
+    # 车辆到达Gj节点的时间
+    datetime_Gj = get_carstate(Gj)[1]
+    cur_dist = 0
+    pre = Gj
+    for Gc in share_path[1:]:
+        cur_dist += get_dist(pre, Gc)
+        pre = Gc
+        #在txt文件上追加内容
+        with open("carstates/carstate" + str(Gc) + ".txt", 'a') as f:
+            # TODO 需要得到车辆的乘客人数
+            arrive_time = datetime_add(datetime_Gj, cur_dist / 1000)
+            is_Ld = 0
+            if Gc == share_path[-1]:
+                is_Ld = 1
+            add_carstate = [carid, str(arrive_time), is_Ld]
+            f.write(str(add_carstate) + '\n')
 
 '''
 把datetime转为字符串
@@ -137,13 +176,11 @@ def str_todatetime(str):
 在某个时间的基础上增加x分钟x秒
      input:
         dt_string:日期格式的字符串 eg:'2020-03-18 22:25:76'
-        minutes:要加的分钟数
-        seconds:要加的秒数
+        minutes:要加的分钟数(可以是小数)
 '''
-def datetime_add(dt_string, minutes, seconds):
+def datetime_add(dt_string, minutes):
     minutes_delta = timedelta(minutes=minutes)
-    seconds_delte = timedelta(seconds=seconds)
-    new_datetime = str_todatetime(dt_string) + minutes_delta + seconds_delte
+    new_datetime = str_todatetime(dt_string) + minutes_delta
     return new_datetime
 
 '''
@@ -158,10 +195,20 @@ def get_sharedist(request_Ls, Ld1, Ld2):
 
 '''
 根据Gj -> request.Ls -> request.Ld(car.Ld) -> car.Ld(request.Ld)进行路径规划
+carstate:某个节点的车辆状态表[车辆id, 到达的时间, 车上的乘客人数, 是否为目的地(0:否，1:是)]
 '''
-def get_share_path(Gj, request_Ls, request_Ld, car_Ld):
+def get_share_path(Gj, request_Ls, Ld1, Ld2, carid):
     share_path = []
-    #TODO
+    #1.获取从Gj到request_Ls的路径pathj_Ls
+    pathj_Ls = get_path(Gj, request_Ls)
+    #2.获取从request_Ls到Ld1的路径pathLs_Ld1
+    pathLs_Ld1 = get_path(request_Ls, Ld1)
+    #3.获取从Ld1到Ld2的路径pathLs_Ld2
+    pathLs_Ld2 = get_path(Ld1, Ld2)
+    #4.合并三个路径
+    share_path.extend(pathj_Ls)
+    share_path.extend(pathLs_Ld1[1:])
+    share_path.extend(pathLs_Ld2[1:])
     return share_path
 
 '''
@@ -332,42 +379,72 @@ def optimal_solution(car_end, request):
 def after_match(car_best, request):
     Gj = car_best[1]
     car_Ld = car_best[2]
+    carid = car_best[0]
     #1.拿到车辆从Gj节点到car.Ld节点的路径，修改路径上节点的车辆状态表
     pathj_Ld = get_path(Gj, car_Ld)
     #2.拿到车辆从Gj到request.Ls再到request.Ld(car.Ld)再到car.Ld(request.Ld)节点的路径规划，修改路径上节点的车辆状态表，修改车辆的当前目的地
     share_path = None
     if car_best[3] == 1:
-        share_path = get_share_path(Gj, request.Ls, request.Ld, car_Ld)
+        share_path = get_share_path(Gj, request.Ls, request.Ld, car_Ld, carid)
     else:
-        share_path = get_share_path(Gj, request.Ls, car_Ld, request.Ld)
-
-
+        share_path = get_share_path(Gj, request.Ls, car_Ld, request.Ld, carid)
+    #移除Gj节点到car.Ld节点路径上的节点的车辆状态表
+    remove_carstate(pathj_Ld, carid)
+    #新增share_path路径上的所有节点车辆状态表
+    add_carstate(share_path, carid)
 
 
 if __name__ == "__main__":
+    pass
+    # share_path = []
+    # pathj_Ls = [1, 4, 3]
+    # pathLs_Ld1 = [3, 8, 9]
+    # pathLs_Ld2 = [9, 2, 6]
+    # share_path.extend(pathj_Ls)
+    # share_path.extend(pathLs_Ld1[1:])
+    # share_path.extend(pathLs_Ld2[1:])
+    # print(share_path)
+
+
     # dt = str_todatetime('2020-3-18 22:25:16')
     # print(type(dt))
     # print(dt)
     # dt_str = datetime_tostr(dt)
     # print(type(dt_str))
     # print(dt_str)
+
+
     # pass
     # count = 0
     # with open('carstates/carstate0.txt', 'r') as f:
     #     for line in f:
     #         print(line, count)
     #         count += 1
+
+
     # update_carstate(0, [[0, "2020-03-28 22:17:46", 2], [1, "2020-03-28 22:17:46", 1],
     #                     [2, "2020-03-28 22:17:46", 0]])
     # carstate = DataOperate.read_distancedata_from_txt('carstates/carstate0.txt')
-    carstate = get_carstate(0)
-    print(carstate)
+    # carstate = get_carstate(0)
+    # print(carstate)
     # print('2020-03-28 22:17:46' >= datetime.now().strftime("%F %T"))
     # dt = str_todatetime(carstate[0][1])
     # print(type(dt))
     # print(dt)
     # add = datetime_add(carstate[0][1], 0, 100, 70)
     # print(add)
+
+    #测试是否可以传小数
+    # str_datetime = '2020-03-26 22:17:00'
+    # print(str_datetime)
+    # add = datetime_add(str_datetime, 2.60)
+    # print(add)
+    # print(type(add))
+
+    #测试获取1000个节点的dist的时间
+
+
+
     # print(badNode(3423))
     # start_time = timer()
     # path = get_path(789, 456)
