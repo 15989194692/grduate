@@ -5,6 +5,7 @@ from StreetNode import StreetNode
 from Car import Car
 import Utils
 import os,pprint
+from datetime import datetime
 
 '''
 将街道节点保存到map中
@@ -79,6 +80,8 @@ def init_car():
         car = Car(Lc, 3, -1, 10000)
         cars.append(car)
         count += 1
+        #更新Lc节点的车辆状态表([车辆id，到达该节点的时间，车上的乘客人数，是否在该节点停靠(1:是，0:否)])
+        Utils.update_carstate(Lc, [[car.id, datetime.now().strftime("%F %T"), 0, 1]])
 
     return cars
 
