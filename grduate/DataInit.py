@@ -3,9 +3,11 @@ import numpy as np
 import Dijkstra
 from StreetNode import StreetNode
 from Car import Car
-import Utils
-import os,pprint
+import os
 from datetime import datetime
+import ast
+import MathUtils
+import NodeUtils
 
 '''
 将街道节点保存到map中
@@ -69,21 +71,40 @@ def init_data():
         DataOperate.write_distancedata_to_txt(path, file_path)
 
 #初始化1200辆车的起始位置
+""""
+车辆信息：
+    id:车辆唯一标识
+    Lc(街道节点编号):当前位置
+    Pc:当前乘客人数
+    Ld(街道节点编号):出租车当前目的地
+    Ts([requestid, ...]):当前车辆乘客能忍受因为拼车的新乘客所产生的时延
+    path:当前车辆的路径规划
+    isSharing:是否有两批乘客在拼同一辆车(0:否，1：是)
+    B:电池剩余电量
+"""
 def init_car():
     L = []
     count = 0
     cars = []
     while count < 1200:
-        Lc = Utils.random_id()
+        Lc = MathUtils.random_id()
         if L.count(Lc) > 0:
             continue
-        car = Car(Lc, 3, -1, 10000)
+        car = Car(Lc, 0, -1, [], 0, 10000)
         cars.append(car)
         count += 1
         #更新Lc节点的车辆状态表([车辆id，到达该节点的时间，车上的乘客人数，是否在该节点停靠(1:是，0:否)])
-        Utils.update_carstate(Lc, [[car.id, datetime.now().strftime("%F %T"), 0, 1]])
+        NodeUtils.update_carstate(Lc, [[car.id, datetime.now().strftime("%F %T"), 0, 1]])
+        NodeUtils.update_car(car.id, car)
 
     return cars
+
+'''
+自定义充电站在道路中的位置并写入到文件中
+'''
+def random_chargings():
+    #TODO
+    pass
 
 
 '''
@@ -91,26 +112,28 @@ def init_car():
 '''
 def create_empty_txt():
     # 将文件目录指定到新建的文件目录下
-    os.chdir('D:/pyCharm/py_workspace/grduate/carstates')
+    os.chdir('D:/pyCharm/py_workspace/grduate/cars')
     print(os.getcwd())  # 确认当前目录
 
     # 用open函数创建文件
     # 使用join拼写目录
-    for i in range(0, 3425):
-        a = os.path.join('D:/pyCharm/py_workspace/grduate/carstates', "carstate" +str(i) + '.txt')
+    for i in range(0, 1200):
+        a = os.path.join('D:/pyCharm/py_workspace/grduate/cars', "car" +str(i) + '.txt')
         c = open(a, 'w')
 
     # 遍历文件夹下的所有文件
     print(os.listdir())
 
 if __name__ == "__main__":
+    car = NodeUtils.get_car(0)
+    print(car)
     # init_data()
     # maps, list = data2map()
     # print(len(maps))
     # cars = init_car()
     # for car in cars:
     #     print(car)
-    create_empty_txt()
+    # create_empty_txt()
 
 
 
