@@ -2,7 +2,6 @@
 import DataOperate
 import json
 from datetime import datetime, timedelta
-import MathUtils
 import ast
 import DatetimeUtils
 
@@ -10,7 +9,18 @@ import DatetimeUtils
 def reachable(sourcedId, targetId):
     return sourcedId == targetId or get_dist(sourcedId, targetId) >= 0
 
+#badnode：不能到达任意其他节点中的一个节点
+def badNode(sourcedId):
+    # distance = get_distance(sourcedId)
+    # for dist in distance:
+    #     if (dist > 0):
+    #         return False
+    # return True
+    with open("badnode/allBadnode.txt", 'r') as f:
+        for line in f:
+            badnodes = json.loads(line)
 
+    return badnodes.count(sourcedId) > 0
 
 #得到从sourcedId节点到targetId节点的最短路径
 def get_path(sourcedId, targetId):
@@ -34,7 +44,7 @@ def get_dist(sourcedId, targetId):
 def find_all_badnode():
     badnode = []
     for i in range(0, 3425):
-        if MathUtils.badNode(i):
+        if badNode(i):
             badnode.append(i)
     with open("badnode/allBadnode.txt", 'w') as f:
         f.write(str(badnode))

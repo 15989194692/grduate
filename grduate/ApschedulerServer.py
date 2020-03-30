@@ -13,6 +13,9 @@ def recharged(carid, dist):
     car = get_car(carid)
     print(car, "  ", dist)
 
+def print_text(text):
+    print(text)
+
 class SchedulerService(rpyc.Service):
     def exposed_add_job(self, func, *args, **kwargs):
         return scheduler.add_job(func, *args, **kwargs)

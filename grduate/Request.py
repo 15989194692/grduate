@@ -12,7 +12,7 @@
 class Request(object):
     count = 0
 
-    def __init__(self, Tp, Ls, Pr, Ld, Tw, Ts):
+    def __init__(self, Tp, Ls, Pr, Ld):
         self.id = Request.count
         Request.count += 1
 
@@ -20,8 +20,9 @@ class Request(object):
         self.Ls = Ls
         self.Pr = Pr
         self.Ld = Ld
-        self.Tw = Tw
-        self.Ts = Ts
+        # self.Tw = Tw
+        # self.Ts = Ts
 
     def __str__(self):
-        return ("id : %s, Tp : %s, Ls : %s, Pr : %s, Ld : %s, Tw : %s, Ts : %s" % (self.id, self.Tp, self.Ls, self.Pr, self.Ld, self.Tw, self.Ts))
+        # return ("id : %s, Tp : %s, Ls : %s, Pr : %s, Ld : %s, Ts : %s" % (self.id, self.Tp, self.Ls, self.Pr, self.Ld, self.Ts))
+        return ("[%s, %s, %s, %s, %s]" % (self.id, self.Tp, self.Ls, self.Pr, self.Ld))

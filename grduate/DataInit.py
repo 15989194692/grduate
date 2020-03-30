@@ -8,6 +8,8 @@ from datetime import datetime
 import ast
 import MathUtils
 import NodeUtils
+from Request import Request
+import DatetimeUtils
 
 '''
 将街道节点保存到map中
@@ -106,6 +108,47 @@ def random_chargings():
     #TODO
     pass
 
+
+'''
+自定义请求并写入到文件中，通过定时任务，可以模拟发出请求
+    用户请求：
+        id:每个请求的唯一标识
+        Tp:出发时间
+        Ls(街道节点编号):用户的出发地
+        Pr:需求的座位数
+        Ld(街道节点编号):用户的目的地
+        __init__(self, Tp, Ls, Pr, Ld)
+'''
+def random_request():
+    #TODO
+    #0.获取当前系统时间
+    now = DatetimeUtils.cur_datetime()
+    #1.随机生成1-55的数，代表多少分钟后执行定时任务
+    minute = MathUtils.random_time()
+    #2.出发时间统一在请求发出的5分钟
+    Tp = DatetimeUtils.datetime_add(now, minute + 5)
+    #3.随机生成需求座位数1-3
+    Pr = MathUtils.random_pr()
+    #4.随机生成出发地和目的地
+    Ls, Ld = MathUtils.random_sour_targ()
+    #5.生成Request对象
+    request = Request(Tp, Ls, Pr, Ld)
+    #6.TODO 提交定时任务到定时任务服务器
+
+    #7.写入到文件中
+    DataOperate.update_request(request)
+
+
+'''
+初始化size条请求，默认为1200条
+    input:
+        size:请求条数
+'''
+def init_requests(size = 1200):
+    #TODO
+    pass
+    for i in range(0, size):
+        random_request()
 
 '''
 创建3425个空的txt文件

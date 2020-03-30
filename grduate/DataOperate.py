@@ -1,4 +1,5 @@
 import xlrd
+import ast
 
 def get_data_from_xlsx(path = "C:/Users/13569/Desktop/shenzhen.xlsx"):
     book = xlrd.open_workbook(path)
@@ -38,6 +39,7 @@ def read_pathdata_from_txt(file_path):
 
     return paths
 
+
 def read_distancedata_from_txt(file_path):
     with open(file_path, 'r') as f:
         # lines = f.readlines()
@@ -48,6 +50,28 @@ def read_distancedata_from_txt(file_path):
     #     distance = json.loads(line)
 
     return distances
+
+'''
+获取一个用户请求
+    input:
+        requestId:请求id
+'''
+def get_request(requestId):
+    with open('requests/request' + str(requestId) + '.txt', 'r') as f:
+        for line in f:
+            request = ast.literal_eval(line.rstrip("\n"))
+    return request
+
+
+'''
+更新请求信息
+    input:
+        request:一个用户请求
+'''
+def update_request(request):
+    id = request.id
+    with open('requests/request' + str(id) + '.txt', 'w') as f:
+        f.write(str(request) + '\n')
 
 
 if __name__ == "__main__":
