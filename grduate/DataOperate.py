@@ -1,5 +1,8 @@
 import xlrd
 import ast
+from Car import Car
+from datetime import datetime
+from Request import Request
 
 def get_data_from_xlsx(path = "C:/Users/13569/Desktop/shenzhen.xlsx"):
     book = xlrd.open_workbook(path)
@@ -51,6 +54,44 @@ def read_distancedata_from_txt(file_path):
 
     return distances
 
+
+'''
+获取所有的充电站所在节点list
+'''
+def get_chargings():
+    with open('chargings/chargings.txt', 'r') as f:
+        for line in f:
+            chargings = ast.literal_eval(line.rstrip("\n"))
+
+    return chargings
+
+
+'''
+获取某辆车的信息
+    input:
+        carid:车辆id
+'''
+def get_car(carid):
+    with open('cars/car' + str(carid) + '.txt', 'r') as f:
+        for line in f:
+            car = ast.literal_eval(line.rstrip("\n"))
+    #(self, Lc, Pc, Ls, Ld, path, isSharing, B)
+    c = Car(car[1], car[2], car[3], car[4], car[5], car[6], car[7])
+    c.id = car[0]
+    return c
+
+
+'''
+修改某辆车的信息
+    input:
+        carid:车辆id
+        car:要修改的信息
+'''
+def update_car(carid, car):
+    print(car)
+    with open('cars/car' + str(carid) + '.txt', 'w') as f:
+        f.write(str(car) + '\n')
+
 '''
 获取一个用户请求
     input:
@@ -60,8 +101,10 @@ def get_request(requestId):
     with open('requests/request' + str(requestId) + '.txt', 'r') as f:
         for line in f:
             request = ast.literal_eval(line.rstrip("\n"))
-    return request
-
+    #def __init__(self, Tp, Ls, Pr, Ld)
+    r = Request(request[1], request[2], request[3], request[4])
+    r.id = request[0]
+    return r
 
 '''
 更新请求信息
@@ -72,6 +115,52 @@ def update_request(request):
     id = request.id
     with open('requests/request' + str(id) + '.txt', 'w') as f:
         f.write(str(request) + '\n')
+
+'''
+拿到某个节点的车辆状态表([车辆id, 到达的时间, 是否为目的地(0:否，1:是)])
+    input:
+        sourcedId:节点编号
+    output:
+        carstate:某个节点的车辆状态表[车辆id, 到达的时间, 是否为目的地(0:否，1:是)]
+'''
+def get_carstate(sourcedId):
+    with open("carstates/carstate" + str(sourcedId) + ".txt", 'r') as f:
+        carstate = []
+        #获取系统当前的时间，格式为：'YYYY-mm-dd HH:MM:SS' str类型
+        now_datetime = datetime.now().strftime("%F %T")
+        update = False
+        for line in f:
+            state = ast.literal_eval(line.rstrip("\n"))
+            #判断目的地是否在这个节点or大于当前系统时间，若在该节点或大于系统时间，表示这条数据是有效的,若其中有一条数据是无效的，需要更新车辆状态表
+            if state[2] == 1 or state[1] >= now_datetime:
+                carstate.append(state)
+            else:
+                update = True
+    if update == True:
+        print("更新%s节点的车辆状态表" %sourcedId)
+        update_carstate(sourcedId, carstate)
+    return carstate
+
+'''
+对某个节点的车辆状态表进行更新
+    input:
+        sourcedId:节点编号
+        carstate:新的车辆状态表
+'''
+def update_carstate(sourcedId, carstate):
+    file_path = "carstates/carstate" + str(sourcedId) + ".txt"
+    with open(file_path, 'w') as f:
+        for state in carstate:
+            f.write(str(state) + '\n')
+
+'''
+在车辆状态表文件中追加一行
+'''
+def append_carstate(sourcedId, carstate):
+    with open("carstates/carstate" + str(sourcedId) + ".txt", 'a') as f:
+        f.write(str(carstate) + '\n')
+
+
 
 
 if __name__ == "__main__":

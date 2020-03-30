@@ -1,4 +1,3 @@
-
 import DataOperate
 import json
 from datetime import datetime, timedelta
@@ -71,75 +70,9 @@ def get_distances():
 
     return distances
 
-'''
-获取某辆车的信息
-    input:
-        carid:车辆id
-'''
-def get_car(carid):
-    with open('cars/car' + str(carid) + '.txt', 'r') as f:
-        for line in f:
-            car = ast.literal_eval(line.rstrip("\n"))
 
-    return car
 
-'''
-修改某辆车的信息
-    input:
-        carid:车辆id
-        car:要修改的信息
-'''
-def update_car(carid, car):
-    print(car)
-    with open('cars/car' + str(carid) + '.txt', 'w') as f:
-        f.write(str(car) + '\n')
 
-'''
-获取所有的充电站所在节点list
-'''
-def get_chargings():
-    with open('chargings/chargings.txt', 'r') as f:
-        for line in f:
-            chargings = ast.literal_eval(line.rstrip("\n"))
-
-    return chargings
-
-'''
-拿到某个节点的车辆状态表([车辆id, 到达的时间, 车上的乘客人数, 是否为目的地(0:否，1:是)])
-    input:
-        sourcedId:节点编号
-    output:
-        carstate:某个节点的车辆状态表[车辆id, 到达的时间, 车上的乘客人数, 是否为目的地(0:否，1:是)]
-'''
-def get_carstate(sourcedId):
-    with open("carstates/carstate" + str(sourcedId) + ".txt", 'r') as f:
-        carstate = []
-        #获取系统当前的时间，格式为：'YYYY-mm-dd HH:MM:SS' str类型
-        now_datetime = datetime.now().strftime("%F %T")
-        update = False
-        for line in f:
-            state = ast.literal_eval(line.rstrip("\n"))
-            #判断目的地是否在这个节点or大于当前系统时间，若在该节点或大于系统时间，表示这条数据是有效的,若其中有一条数据是无效的，需要更新车辆状态表
-            if state[3] == 0 or state[1] >= now_datetime:
-                carstate.append(state)
-            else:
-                update = True
-    if update == True:
-        print("更新%s节点的车辆状态表" %sourcedId)
-        update_carstate(sourcedId, carstate)
-    return carstate
-
-'''
-对某个节点的车辆状态表进行更新
-    input:
-        sourcedId:节点编号
-        carstate:新的车辆状态表
-'''
-def update_carstate(sourcedId, carstate):
-    file_path = "carstates/carstate" + str(sourcedId) + ".txt"
-    with open(file_path, 'w') as f:
-        for state in carstate:
-            f.write(str(state) + '\n')
 
 
 
@@ -157,7 +90,7 @@ def remove_carstate(pathj_Ld, carid):
                 state = ast.literal_eval(line.rstrip("\n"))
                 if state[0] != carid:
                     new_carstate.append(state)
-        update_carstate(Gc, new_carstate)
+        DatetimeUtils.update_carstate(Gc, new_carstate)
 
 '''
 将共享路径上的节点的车辆状态表增加车牌为carid的记录
@@ -180,6 +113,12 @@ def add_carstate(share_path, carid, Gj):
             add_carstate = [carid, str(arrive_time), is_Ld]
             f.write(str(add_carstate) + '\n')
 
+
+
 if __name__ == "__main__":
     #测试update_car
-    update_car(0, [])
+    # update_car(0, [])
+    #测试get_car
+    car = get_car(0)
+    print(type(car))
+    print("id : %s, Lc : %s, Pc : %s, Ld : %s, path : %s, isSharing : %s, B : %s" %(car.id, car.Lc, car.Pc, car.Ld, car.path, car.isSharing, car.B))

@@ -4,14 +4,33 @@ import datetime as dt
 from apscheduler.schedulers.background import BackgroundScheduler
 from NodeUtils import get_car
 from NodeUtils import get_chargings
+import MathUtils
 
 def test_job():
     print(dt.datetime.now().strftime("%T %F"))
 
-#每当车辆到达目的地后，查看车辆是否需要充电
+'''
+每当车辆到达目的地后，查看车辆是否需要充电
+    input:
+        carid:车辆id
+        dist:车辆行驶的距离
+'''
 def recharged(carid, dist):
+    #1.获取车辆信息
     car = get_car(carid)
-    print(car, "  ", dist)
+    #2.TODO 根据距离推断消耗的电量
+    cost = MathUtils.dist_cost(dist)
+    #3.修改车辆的电量信息
+    car.B -= cost
+    #4.判断是否需要充电
+    #4.1需要充电
+    if car.B <= 10:
+        pass
+    #不需要充电
+    else:
+        pass
+    #5.修改节点车辆状态表
+
 
 def print_text(text):
     print(text)
