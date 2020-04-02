@@ -25,4 +25,4 @@ class Request(object):
 
     def __str__(self):
         # return ("id : %s, Tp : %s, Ls : %s, Pr : %s, Ld : %s, Ts : %s" % (self.id, self.Tp, self.Ls, self.Pr, self.Ld, self.Ts))
-        return ("[%s, %s, %s, %s, %s]" % (self.id, self.Tp, self.Ls, self.Pr, self.Ld))
+        return ("[%s, '%s', %s, %s, %s]" % (self.id, self.Tp, self.Ls, self.Pr, self.Ld))

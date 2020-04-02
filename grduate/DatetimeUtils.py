@@ -40,6 +40,14 @@ def datetime_add(dt_string, minutes):
 
 if __name__ == "__main__":
     #测试cur_datetime方法
+    # now = cur_datetime()
+    # print(now)
+    # print(type(now))
+
+
+    #测试datetime_add方法
     now = cur_datetime()
     print(now)
-    print(type(now))
+    add = datetime_add(now, -4)
+    print(type(add))
+    print(add)

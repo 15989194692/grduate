@@ -9,10 +9,15 @@ import datetime as dt
 
 
 if __name__ == "__main__":
+    pass
     #测试cars修改是否起作用
     # cars[0].Ld = 89
-    GlobalVar.set_cars(10)
-
+    # GlobalVar.set_cars(10)
+    list = []
+    if list:
+        print(True)
+    else:
+        print(False)
     # now_time = dt.datetime.now().strftime("%F %T")
     # print(type(now_time))
     # print(now_time)

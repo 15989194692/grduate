@@ -87,9 +87,9 @@ def get_car(carid):
         carid:车辆id
         car:要修改的信息
 '''
-def update_car(carid, car):
-    print(car)
-    with open('cars/car' + str(carid) + '.txt', 'w') as f:
+def update_car(car):
+    # print(car)
+    with open('cars/car' + str(car.id) + '.txt', 'w') as f:
         f.write(str(car) + '\n')
 
 '''
@@ -116,6 +116,24 @@ def update_request(request):
     with open('requests/request' + str(id) + '.txt', 'w') as f:
         f.write(str(request) + '\n')
 
+
+"""
+判断车辆状态表中的某一行记录的车辆是否可用，即车辆是否已经经过这个节点了，这条记录无效了
+    input:
+        state:车辆状态[车辆id，到达该节点的时间，该节点是否是车辆的目的地]
+"""
+def car_available(state):
+    arrive_datetime = state[1]
+    # is_target = state[2]
+    # 获取系统当前的时间，格式为：'YYYY-mm-dd HH:MM:SS' str类型
+    now_datetime = datetime.now().strftime("%F %T")
+    #判断车辆是否已经经过这个节点了，这条记录无效了
+    if arrive_datetime < now_datetime:
+        return False
+    return True
+
+
+
 '''
 拿到某个节点的车辆状态表([车辆id, 到达的时间, 是否为目的地(0:否，1:是)])
     input:
@@ -126,13 +144,12 @@ def update_request(request):
 def get_carstate(sourcedId):
     with open("carstates/carstate" + str(sourcedId) + ".txt", 'r') as f:
         carstate = []
-        #获取系统当前的时间，格式为：'YYYY-mm-dd HH:MM:SS' str类型
-        now_datetime = datetime.now().strftime("%F %T")
+
         update = False
         for line in f:
             state = ast.literal_eval(line.rstrip("\n"))
             #判断目的地是否在这个节点or大于当前系统时间，若在该节点或大于系统时间，表示这条数据是有效的,若其中有一条数据是无效的，需要更新车辆状态表
-            if state[2] == 1 or state[1] >= now_datetime:
+            if car_available(state):
                 carstate.append(state)
             else:
                 update = True
@@ -155,6 +172,9 @@ def update_carstate(sourcedId, carstate):
 
 '''
 在车辆状态表文件中追加一行
+    input:
+        sourcedId:源节点
+        carstate:车辆状态表
 '''
 def append_carstate(sourcedId, carstate):
     with open("carstates/carstate" + str(sourcedId) + ".txt", 'a') as f:
@@ -164,7 +184,23 @@ def append_carstate(sourcedId, carstate):
 
 
 if __name__ == "__main__":
-    write_pathdata_to_txt([[1,3,5], [2,3,4,6]], "paths/0.txt")
+    pass
+    #测试get_request方法
+    # request = get_request(1)
+    # print(request)
+    # print("id : %s, Tp : %s, Ls : %s, Pr : %s, Ld : %s," % (request.id, request.Tp, request.Ls, request.Pr, request.Ld))
+
+    #测试get_carstate方法
+    # carstate = get_carstate(0)
+    # print(carstate)
+
+    #测试update_carstate方法
+    update_carstate(0, [[0, datetime.now().strftime("%F %T"), 1]])
+    #测试get_carstate方法
+    carstate = get_carstate(0)
+    print(carstate)
+
+    # write_pathdata_to_txt([[1,3,5], [2,3,4,6]], "paths/0.txt")
     # data, rows = get_data_from_xlsx()
     # for i in range(rows):
     #     for col in data:

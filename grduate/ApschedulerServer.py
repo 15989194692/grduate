@@ -2,12 +2,23 @@ import rpyc
 from rpyc.utils.server import ThreadedServer
 import datetime as dt
 from apscheduler.schedulers.background import BackgroundScheduler
-from NodeUtils import get_car
-from NodeUtils import get_chargings
 import MathUtils
+import DataOperate
+import MatchingAlgorithm
+import DatetimeUtils
+
 
 def test_job():
     print(dt.datetime.now().strftime("%T %F"))
+
+
+'''
+处理请求，为请求分配一辆车
+'''
+def handle_request(reqestId):
+    request = DataOperate.get_request(reqestId)
+    MatchingAlgorithm.matching_car(request)
+
 
 '''
 每当车辆到达目的地后，查看车辆是否需要充电
@@ -15,22 +26,37 @@ def test_job():
         carid:车辆id
         dist:车辆行驶的距离
 '''
-def recharged(carid, dist):
+def recharged(carid, car_Ld, dist):
     #1.获取车辆信息
-    car = get_car(carid)
-    #2.TODO 根据距离推断消耗的电量
+    car = DataOperate.get_car(carid)
+
+    #2.根据距离推断消耗的电量
     cost = MathUtils.dist_cost(dist)
-    #3.修改车辆的电量信息
+
+    #3.修改车辆信息
     car.B -= cost
-    #4.判断是否需要充电
-    #4.1需要充电
+    car.batch_numbers = 0
+    car.Pc = 0
+    #4 获取系统当前的时间，格式为：'YYYY-mm-dd HH:MM:SS' str类型
+    now_datetime = DatetimeUtils.cur_datetime()
+
+    #5.判断是否需要充电
+    #5.1需要充电
     if car.B <= 10:
-        pass
+        #5.1.1 拿到去往最经的充电站节点的路径以及距离
+        path_to_charging, dist_to_charging = MatchingAlgorithm.path_to_charging(car.Ld)
+
+        arrive_datetime = DatetimeUtils.datetime_add(now_datetime, dist_to_charging / 1000)
+        car.Ld = path_to_charging[-1]
+        car.Ls = path_to_charging[-1]
+        carstate = [carid, arrive_datetime, 1]
     #不需要充电
     else:
+        car.Ls = car.Ld
+        carstate = [carid, now_datetime, 1]
         pass
-    #5.修改节点车辆状态表
-
+    #5.在节点车辆状态表上拼接一行车辆状态信息
+    DataOperate.append_carstate(car_Ld, carstate)
 
 def print_text(text):
     print(text)

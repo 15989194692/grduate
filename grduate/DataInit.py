@@ -10,6 +10,7 @@ import MathUtils
 import NodeUtils
 from Request import Request
 import DatetimeUtils
+import ApschedulerClient
 
 '''
 将街道节点保存到map中
@@ -78,11 +79,11 @@ def init_data():
     id:车辆唯一标识
     Lc(街道节点编号):当前位置
     Pc:当前乘客人数
+    Ls:出租车的出发地
     Ld(街道节点编号):出租车当前目的地
-    Ts([requestid, ...]):当前车辆乘客能忍受因为拼车的新乘客所产生的时延
     path:当前车辆的路径规划
-    isSharing:是否有两批乘客在拼同一辆车(0:否，1：是)
-    B:电池剩余电量
+    batch_numbers:车辆上的乘客批数
+    Battery(单位：kwh):电池剩余电量
 """
 def init_car():
     L = []
@@ -92,12 +93,23 @@ def init_car():
         Lc = MathUtils.random_id()
         if L.count(Lc) > 0:
             continue
-        car = Car(Lc, 0, -1, [], 0, 10000)
+        '''
+        车辆信息：
+            id:车辆唯一标识
+            Lc(街道节点编号):当前位置
+            Pc:当前乘客人数
+            Ls:出租车的出发地
+            Ld(街道节点编号):出租车当前目的地
+            path:当前车辆的路径规划
+            batch_numbers:车辆上的乘客批数
+            Battery(单位：kwh):电池剩余电量
+        '''
+        car = Car(Lc, 0, Lc, Lc, [], 0, 50)
         cars.append(car)
         count += 1
-        #更新Lc节点的车辆状态表([车辆id，到达该节点的时间，车上的乘客人数，是否在该节点停靠(1:是，0:否)])
-        NodeUtils.update_carstate(Lc, [[car.id, datetime.now().strftime("%F %T"), 0, 1]])
-        NodeUtils.update_car(car.id, car)
+        #更新Lc节点的车辆状态表([车辆id，到达该节点的时间，目的地是否为该节点(1:是，0:否)])
+        DataOperate.update_carstate(Lc, [[car.id, datetime.now().strftime("%F %T"), 1]])
+        DataOperate.update_car(car)
 
     return cars
 
@@ -111,6 +123,8 @@ def random_chargings():
 
 '''
 自定义请求并写入到文件中，通过定时任务，可以模拟发出请求
+    input:
+        hour:延迟hour个小时
     用户请求：
         id:每个请求的唯一标识
         Tp:出发时间
@@ -119,36 +133,36 @@ def random_chargings():
         Ld(街道节点编号):用户的目的地
         __init__(self, Tp, Ls, Pr, Ld)
 '''
-def random_request():
-    #TODO
+def random_request(hour):
     #0.获取当前系统时间
     now = DatetimeUtils.cur_datetime()
     #1.随机生成1-55的数，代表多少分钟后执行定时任务
     minute = MathUtils.random_time()
-    #2.出发时间统一在请求发出的5分钟
-    Tp = DatetimeUtils.datetime_add(now, minute + 5)
+    #2.出发时间统一在请求发出的5分钟后
+    Tp = DatetimeUtils.datetime_add(now, 60 * hour + minute + 5)
     #3.随机生成需求座位数1-3
     Pr = MathUtils.random_pr()
     #4.随机生成出发地和目的地
     Ls, Ld = MathUtils.random_sour_targ()
     #5.生成Request对象
     request = Request(Tp, Ls, Pr, Ld)
-    #6.TODO 提交定时任务到定时任务服务器
-
-    #7.写入到文件中
+    #6.写入到文件中
     DataOperate.update_request(request)
+    #7.提交定时任务到定时任务服务器
+    execute_datetime = str(DatetimeUtils.datetime_add(str(Tp), -5))
+    ApschedulerClient.handle_request_job(request.id, execute_datetime)
+
 
 
 '''
 初始化size条请求，默认为1200条
     input:
         size:请求条数
+        hour:延迟hour个小时
 '''
-def init_requests(size = 1200):
-    #TODO
-    pass
+def init_requests(hour = 0, size = 1200):
     for i in range(0, size):
-        random_request()
+        random_request(hour)
 
 '''
 创建3425个空的txt文件
