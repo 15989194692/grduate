@@ -56,9 +56,6 @@ def path_to_charging(sourcedId):
     return NodeUtils.get_path(sourcedId, targetId), min
 
 
-
-
-
 '''
 出发地匹配 
     input:
@@ -98,6 +95,13 @@ def origin_match(request):
             vis[carid] = 1
             #获取车辆信息
             car = DataOperate.get_car(carid)
+            #判断车辆是否正在充电
+            if car.is_recharge == 1:
+                continue
+            #如果车辆当前的拼车乘客为0，即没有乘客的话，那么是符合条件的，不需要进行其他的判断了
+            if car.batch_numbers == 0:
+                car_start.append([carid, car.Ld, i, DatetimeUtils.cur_datetime(), car.Ls])
+                continue
             #如果车辆已有两批乘客在拼车，则不考虑
             if car.batch_numbers > 1:
                 continue
@@ -289,21 +293,25 @@ def after_match(car_best, request):
 def matching_car(request):
     pass
     print('正在为id为%s的请求匹配车辆,请求的出发地为%s，目的地为%s，出发时间为%s' %(request.id, request.Ls, request.Ld, request.Tp))
-    #TODO 需要做相关判断，如集合为空等
+    execute_datetime = str(DatetimeUtils.datetime_add(DatetimeUtils.cur_datetime(), 0.5))
+    #需要做相关判断，如集合为空等
     car_start = origin_match(request)
     if not car_start:
         print('在请求出发地附近找不到匹配车辆,请求将在30s后再次被执行')
-        #TODO 提交定时任务
+        #提交定时任务
+        ApschedulerClient.handle_request_job(request.id, execute_datetime)
         return
     car_end = target_match(request, car_start)
     if not car_end:
         print('找不到合适的车辆，请求将在30s后再次被执行')
-        # TODO 提交定时任务
+        #提交定时任务
+        ApschedulerClient.handle_request_job(request.id, execute_datetime)
         return
     car_best = optimal_solution(car_end, request)
     if not car_best:
         print('找不到合适的车辆，请求将在30s后再次被执行')
-        # TODO 提交定时任务
+        # 提交定时任务
+        ApschedulerClient.handle_request_job(request.id, execute_datetime)
         return
     after_match(car_best, request)
     print('已为id为%s的请求匹配到车辆，车辆id为%s' %(request.id, car_best[0]))

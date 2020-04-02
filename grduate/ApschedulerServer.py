@@ -6,11 +6,25 @@ import MathUtils
 import DataOperate
 import MatchingAlgorithm
 import DatetimeUtils
+import ApschedulerClient
 
 
-def test_job():
-    print(dt.datetime.now().strftime("%T %F"))
+def test_job(carid):
+    now = DatetimeUtils.cur_datetime()
+    add = DatetimeUtils.datetime_add(now, 0.2)
+    ApschedulerClient.update_car_is_recharge(str(add), carid)
 
+
+'''
+修改车辆是否在充电的状态
+    input:
+        carid:车辆id
+'''
+def update_car_is_recharge(carid):
+    car = DataOperate.get_car(carid)
+    car.is_recharge = 0
+    DataOperate.update_car(car)
+    # print('update_car_is_recharge')
 
 '''
 处理请求，为请求分配一辆车
@@ -34,29 +48,41 @@ def recharged(carid, car_Ld, dist):
     cost = MathUtils.dist_cost(dist)
 
     #3.修改车辆信息
-    car.B -= cost
+    car.Battery -= cost
     car.batch_numbers = 0
     car.Pc = 0
+
     #4 获取系统当前的时间，格式为：'YYYY-mm-dd HH:MM:SS' str类型
     now_datetime = DatetimeUtils.cur_datetime()
 
     #5.判断是否需要充电
     #5.1需要充电
-    if car.B <= 10:
+    if car.Battery <= 10:
         #5.1.1 拿到去往最经的充电站节点的路径以及距离
         path_to_charging, dist_to_charging = MatchingAlgorithm.path_to_charging(car.Ld)
 
         arrive_datetime = DatetimeUtils.datetime_add(now_datetime, dist_to_charging / 1000)
         car.Ld = path_to_charging[-1]
-        car.Ls = path_to_charging[-1]
+        car.Ls = car.Ld
+        car.is_recharge = 1
         carstate = [carid, arrive_datetime, 1]
+
+        #获取冲完电的时间，datetime类型
+        recharged_datetime = DatetimeUtils.recharged_datetime(arrive_datetime, car.Battery)
+        #提交定时任务修改车辆的状态
+        ApschedulerClient.update_car_is_recharge(recharged_datetime, carid)
+
     #不需要充电
     else:
         car.Ls = car.Ld
+        car.is_recharge = 0
+
         carstate = [carid, now_datetime, 1]
         pass
     #5.在节点车辆状态表上拼接一行车辆状态信息
     DataOperate.append_carstate(car_Ld, carstate)
+    #6.修改车辆信息
+    DataOperate.update_car(car)
 
 def print_text(text):
     print(text)

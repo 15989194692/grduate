@@ -75,8 +75,8 @@ def get_car(carid):
     with open('cars/car' + str(carid) + '.txt', 'r') as f:
         for line in f:
             car = ast.literal_eval(line.rstrip("\n"))
-    #(self, Lc, Pc, Ls, Ld, path, isSharing, B)
-    c = Car(car[1], car[2], car[3], car[4], car[5], car[6], car[7])
+    #def __init__(self, Lc, Pc, Ls, Ld, path, batch_numbers, Battery, is_recharge)
+    c = Car(car[1], car[2], car[3], car[4], car[5], car[6], car[7], car[8])
     c.id = car[0]
     return c
 
@@ -121,16 +121,18 @@ def update_request(request):
 判断车辆状态表中的某一行记录的车辆是否可用，即车辆是否已经经过这个节点了，这条记录无效了
     input:
         state:车辆状态[车辆id，到达该节点的时间，该节点是否是车辆的目的地]
+        sourcedId:所在的节点
 """
-def car_available(state):
+def car_available(state, sourcedId):
+    carid = state[0]
     arrive_datetime = state[1]
-    # is_target = state[2]
+    is_target = state[2]
     # 获取系统当前的时间，格式为：'YYYY-mm-dd HH:MM:SS' str类型
     now_datetime = datetime.now().strftime("%F %T")
-    #判断车辆是否已经经过这个节点了，这条记录无效了
-    if arrive_datetime < now_datetime:
-        return False
-    return True
+    #判断车辆是否是在现在这个节点，若是，那么符合条件，判断车辆是否已经经过这个节点了，若已经过，那么这条记录无效了
+    if (is_target == 1 and get_car(carid).Ls == sourcedId) or arrive_datetime >= now_datetime:
+        return True
+    return False
 
 
 
@@ -149,7 +151,7 @@ def get_carstate(sourcedId):
         for line in f:
             state = ast.literal_eval(line.rstrip("\n"))
             #判断目的地是否在这个节点or大于当前系统时间，若在该节点或大于系统时间，表示这条数据是有效的,若其中有一条数据是无效的，需要更新车辆状态表
-            if car_available(state):
+            if car_available(state, sourcedId):
                 carstate.append(state)
             else:
                 update = True

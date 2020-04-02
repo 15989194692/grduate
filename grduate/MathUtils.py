@@ -56,6 +56,9 @@ def dist_cost(dist):
     return 0.1133 * dist
 
 
+
+
+
 if __name__ == '__main__':
     #测试random_pr方法
     for i in range(0, 10):

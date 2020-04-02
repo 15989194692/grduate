@@ -10,10 +10,11 @@
     path:当前车辆的路径规划
     batch_numbers:车辆上的乘客批数
     Battery(单位：kwh):电池剩余电量
+    is_recharge(0:否，1:是):是否在充电
 """
 class Car(object):
     count = 0
-    def __init__(self, Lc, Pc, Ls, Ld, path, batch_numbers, Battery):
+    def __init__(self, Lc, Pc, Ls, Ld, path, batch_numbers, Battery, is_recharge):
         self.id = Car.count
         Car.count += 1
 
@@ -25,7 +26,8 @@ class Car(object):
         self.path = path
         self.batch_numbers = batch_numbers
         self.Battery = Battery
+        self.is_recharge = is_recharge
 
     def __str__(self):
         # return ("id : %s, Lc : %s, Pc : %s, Ld : %s, path : %s, isSharing : %s, B : %s" %(self.id, self.Lc, self.Pc, self.Ld, self.path, self.isSharing, self.B))
-        return ("[%s, %s, %s, %s, %s, %s, %s, %s]" %(self.id, self.Lc, self.Pc, self.Ls, self.Ld, self.path, self.batch_numbers, self.Battery))
+        return ("[%s, %s, %s, %s, %s, %s, %s, %s, %s]" %(self.id, self.Lc, self.Pc, self.Ls, self.Ld, self.path, self.batch_numbers, self.Battery, self.is_recharge))
