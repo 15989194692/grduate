@@ -4,6 +4,18 @@ from datetime import datetime, timedelta
 import ast
 import DatetimeUtils
 
+#文件路径
+paths_file_path = 'paths1/path'
+distances_file_path = 'distances1/distance'
+cars_file_path = 'cars/car'
+carstates_file_path = 'carstates/carstate'
+chargings_file_path = 'chargings/chargings'
+requests_file_path = 'requests/request'
+badnode_file_path = 'badnode/allBadnode1'
+
+#后缀
+suffix = '.txt'
+
 '''
 判断sourcedId节点是否可以到达targetId节点
 '''
@@ -14,22 +26,22 @@ def reachable(sourcedId, targetId):
 badnode：不能到达任意其他节点中的一个节点
 '''
 def badNode(sourcedId):
-    # distance = get_distance(sourcedId)
-    # for dist in distance:
-    #     if (dist > 0):
-    #         return False
-    # return True
-    with open("badnode/allBadnode.txt", 'r') as f:
-        for line in f:
-            badnodes = json.loads(line)
-
-    return badnodes.count(sourcedId) > 0
+    distance = get_distance(sourcedId)
+    for dist in distance:
+        if (dist < 0):
+            return True
+    return False
+    # with open("badnode/allBadnode.txt", 'r') as f:
+    #     for line in f:
+    #         badnodes = json.loads(line)
+    #
+    # return badnodes.count(sourcedId) > 0
 
 '''
 得到从sourcedId节点到targetId节点的最短路径
 '''
 def get_path(sourcedId, targetId):
-    file_path = "paths/path" + str(sourcedId) + ".txt"
+    file_path = paths_file_path + str(sourcedId) + suffix
     with open(file_path, 'r') as f:
         for line in f:
             paths = json.loads(line)
@@ -40,7 +52,7 @@ def get_path(sourcedId, targetId):
 得到从sourcedId节点到targetId节点的最短距离
 '''
 def get_dist(sourcedId, targetId):
-    file_path = "distances/distance" + str(sourcedId) + ".txt"
+    file_path = distances_file_path + str(sourcedId) + suffix
     with open(file_path, 'r') as f:
         for line in f:
             distance = json.loads(line)
@@ -50,20 +62,23 @@ def get_dist(sourcedId, targetId):
 '''
 找到所有的badnode并且写到badnode/allBadnode.txt文件中，方便以后判断一个节点是否是badnode
 '''
-def find_all_badnode():
+def find_all_badnode(size = 1426):
     badnode = []
-    for i in range(0, 3425):
+    for i in range(0, size):
         if badNode(i):
             badnode.append(i)
-    with open("badnode/allBadnode.txt", 'w') as f:
+    # with open("badnode/allBadnode.txt", 'w') as f:
+    #     f.write(str(badnode))
+    with open(badnode_file_path + suffix, 'w') as f:
         f.write(str(badnode))
+    return badnode
 
 
 '''
 获得某个节点到其他节点的最短距离，数据类型为一维list
 '''
 def get_distance(sourcedId):
-    file_path = "distances/distance" + str(sourcedId) + ".txt"
+    file_path = distances_file_path + str(sourcedId) + suffix
     with open(file_path, 'r') as f:
         for line in f:
             distance = json.loads(line)
@@ -76,9 +91,9 @@ def get_distance(sourcedId):
 '''
 def get_distances():
     distances = []
-    file_path = "distances/distance"
+    # file_path = "distances/distance"
     for i in range(0, 3425):
-        distances.append(DataOperate.read_distancedata_from_txt(file_path + str(i) + ".txt"))
+        distances.append(DataOperate.read_distancedata_from_txt(distances_file_path + str(i) + suffix))
 
     return distances
 
@@ -92,7 +107,7 @@ def get_distances():
 def remove_carstate(pathj_Ld, carid):
     for Gc in pathj_Ld[1:]:
         new_carstate = []
-        with open("carstates/carstate" + Gc + ".txt", 'r') as f:
+        with open(carstates_file_path + Gc + suffix, 'r') as f:
             for line in f:
                 state = ast.literal_eval(line.rstrip("\n"))
                 if state[0] != carid:
@@ -111,7 +126,7 @@ def add_carstate(share_path, carid, Gj):
         cur_dist += get_dist(pre, Gc)
         pre = Gc
         #在txt文件上追加内容
-        with open("carstates/carstate" + str(Gc) + ".txt", 'a') as f:
+        with open(carstates_file_path + str(Gc) + suffix, 'a') as f:
             arrive_time = DatetimeUtils.datetime_add(datetime_Gj, cur_dist / 1000)
             is_Ld = 0
             if Gc == share_path[-1]:
@@ -123,6 +138,22 @@ def add_carstate(share_path, carid, Gj):
 
 if __name__ == "__main__":
     pass
+    #测试get_path
+    # path = get_path(1, 1)
+    # dist = get_dist(1, 1)
+    # print(path)
+    # print(dist)
+
+    #测试find_all_badnode方法
+    badnode = find_all_badnode(1425)
+    print(badnode)
+
+    #测试get_distance
+    # distance = get_distance(2)
+    # for i in distance:
+    #     if i == -1:
+    #         print(True)
+
     #测试update_car
     # update_car(0, [])
     #测试get_car

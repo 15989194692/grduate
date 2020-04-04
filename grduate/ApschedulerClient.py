@@ -29,11 +29,11 @@ def handle_request_job(requestId, execute_datetime):
         car_Ld:车辆的目的地
         carid:车辆id
 '''
-def arrival_job(execute_datetime, car_Ld, carid):
+def arrival_job(execute_datetime, carid, dist):
     conn = rpyc.connect('localhost', 54321)
     #如果之前有任务还没执行，那么取消这个任务
     remove_job(str(carid))
-    conn.root.add_job('ApschedulerServer:recharged', 'date', run_date=execute_datetime, args=[car_Ld, carid], id=str(carid))
+    conn.root.add_job('ApschedulerServer:recharged', 'date', run_date=execute_datetime, args=[carid, dist], id=str(carid))
 
 
 '''

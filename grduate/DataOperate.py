@@ -3,6 +3,20 @@ import ast
 from Car import Car
 from datetime import datetime
 from Request import Request
+import json
+import pandas as pd
+
+#文件路径
+paths_file_path = 'paths1/path'
+distances_file_path = 'distances1/distance'
+cars_file_path = 'cars/car'
+carstates_file_path = 'carstates/carstate'
+chargings_file_path = 'chargings/chargings'
+chargingsState_file_path = 'chargings/chargingsState'
+requests_file_path = 'requests/request'
+
+#后缀
+suffix = '.txt'
 
 def get_data_from_xlsx(path = "C:/Users/13569/Desktop/shenzhen.xlsx"):
     book = xlrd.open_workbook(path)
@@ -15,7 +29,11 @@ def get_data_from_xlsx(path = "C:/Users/13569/Desktop/shenzhen.xlsx"):
 
     return data, rows
 
-import json
+
+def get_data_from_csv(path = 'C:/Users/13569/Desktop/new_street.csv'):
+    data = pd.read_csv(r'C:/Users/13569/Desktop/new_street.csv')
+    return data,len(data)
+
 
 #将某个节点到另外的节点的路径保存到txt文件zhong
 #比如0.txt即为0号节点到其他节点的路径文件
@@ -59,11 +77,43 @@ def read_distancedata_from_txt(file_path):
 获取所有的充电站所在节点list
 '''
 def get_chargings():
-    with open('chargings/chargings.txt', 'r') as f:
+    with open(chargings_file_path + suffix, 'r') as f:
         for line in f:
             chargings = ast.literal_eval(line.rstrip("\n"))
 
     return chargings
+
+'''
+更新充电站节点信息
+    input:
+        chargings(list类型):充电站所在节点集合
+'''
+def update_chargings(chargings):
+    with open(chargings_file_path + suffix, 'w') as f:
+        f.write(str(chargings) + '\n')
+
+
+'''
+获取所有充电站节点的状态信息
+    output:
+        chargings_state_donedatetime：每个充电站什么时间完成对当前充电站最后一辆车的充电
+'''
+def get_chargings_state():
+    chargings_state_donedatetime = None
+    with open(chargingsState_file_path + suffix, 'r') as f:
+        for line in f:
+            chargings_state_donedatetime = ast.literal_eval(line.rstrip("\n"))
+
+    return chargings_state_donedatetime
+
+'''
+修改充电站节点的状态信息，包括当前充电站有多少辆车，当前充电站什么时间完成对当前充电站最后一辆车的充电
+    input:
+        chargings_state_donedatetime：每个充电站什么时间完成对当前充电站最后一辆车的充电
+'''
+def update_chargings_state(chargings_state_donedatetime):
+    with open(chargingsState_file_path + suffix, 'w') as f:
+        f.write(str(chargings_state_donedatetime) + '\n')
 
 
 '''
@@ -72,7 +122,7 @@ def get_chargings():
         carid:车辆id
 '''
 def get_car(carid):
-    with open('cars/car' + str(carid) + '.txt', 'r') as f:
+    with open(cars_file_path + str(carid) + suffix, 'r') as f:
         for line in f:
             car = ast.literal_eval(line.rstrip("\n"))
     #def __init__(self, Lc, Pc, Ls, Ld, path, batch_numbers, Battery, is_recharge)
@@ -89,7 +139,7 @@ def get_car(carid):
 '''
 def update_car(car):
     # print(car)
-    with open('cars/car' + str(car.id) + '.txt', 'w') as f:
+    with open(cars_file_path + str(car.id) + suffix, 'w') as f:
         f.write(str(car) + '\n')
 
 '''
@@ -98,7 +148,7 @@ def update_car(car):
         requestId:请求id
 '''
 def get_request(requestId):
-    with open('requests/request' + str(requestId) + '.txt', 'r') as f:
+    with open(requests_file_path + str(requestId) + suffix, 'r') as f:
         for line in f:
             request = ast.literal_eval(line.rstrip("\n"))
     #def __init__(self, Tp, Ls, Pr, Ld)
@@ -113,7 +163,7 @@ def get_request(requestId):
 '''
 def update_request(request):
     id = request.id
-    with open('requests/request' + str(id) + '.txt', 'w') as f:
+    with open(requests_file_path + str(id) + suffix, 'w') as f:
         f.write(str(request) + '\n')
 
 
@@ -144,7 +194,7 @@ def car_available(state, sourcedId):
         carstate:某个节点的车辆状态表[车辆id, 到达的时间, 是否为目的地(0:否，1:是)]
 '''
 def get_carstate(sourcedId):
-    with open("carstates/carstate" + str(sourcedId) + ".txt", 'r') as f:
+    with open(carstates_file_path + str(sourcedId) + suffix, 'r') as f:
         carstate = []
 
         update = False
@@ -167,7 +217,7 @@ def get_carstate(sourcedId):
         carstate:新的车辆状态表
 '''
 def update_carstate(sourcedId, carstate):
-    file_path = "carstates/carstate" + str(sourcedId) + ".txt"
+    file_path = carstates_file_path + str(sourcedId) + suffix
     with open(file_path, 'w') as f:
         for state in carstate:
             f.write(str(state) + '\n')
@@ -179,7 +229,7 @@ def update_carstate(sourcedId, carstate):
         carstate:车辆状态表
 '''
 def append_carstate(sourcedId, carstate):
-    with open("carstates/carstate" + str(sourcedId) + ".txt", 'a') as f:
+    with open(carstates_file_path + str(sourcedId) + suffix, 'a') as f:
         f.write(str(carstate) + '\n')
 
 
@@ -187,20 +237,30 @@ def append_carstate(sourcedId, carstate):
 
 if __name__ == "__main__":
     pass
+    #测试get_data_from_csv
+    # data,rows = get_data_from_csv()
+    # print(rows)
+    # print(data['length'][0])
+
+    #测试get_car方法
+    car = get_car(0)
+    print(car)
+    print(("id : %s, Lc : %s, Pc : %s, Ls : %s, Ld : %s, path : %s, batch_numbers : %s, Battery : %s, is_recharge : %s" %(car.id, car.Lc, car.Pc, car.Ls, car.Ld, car.path, car.batch_numbers, car.Battery, car.is_recharge)))
+
     #测试get_request方法
-    # request = get_request(1)
-    # print(request)
-    # print("id : %s, Tp : %s, Ls : %s, Pr : %s, Ld : %s," % (request.id, request.Tp, request.Ls, request.Pr, request.Ld))
+    request = get_request(1)
+    print(request)
+    print("id : %s, Tp : %s, Ls : %s, Pr : %s, Ld : %s," % (request.id, request.Tp, request.Ls, request.Pr, request.Ld))
 
-    #测试get_carstate方法
-    # carstate = get_carstate(0)
-    # print(carstate)
-
-    #测试update_carstate方法
-    update_carstate(0, [[0, datetime.now().strftime("%F %T"), 1]])
     #测试get_carstate方法
     carstate = get_carstate(0)
     print(carstate)
+
+    #测试update_carstate方法
+    # update_carstate(0, [[0, datetime.now().strftime("%F %T"), 1]])
+    #测试get_carstate方法
+    # carstate = get_carstate(0)
+    # print(carstate)
 
     # write_pathdata_to_txt([[1,3,5], [2,3,4,6]], "paths/0.txt")
     # data, rows = get_data_from_xlsx()

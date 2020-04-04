@@ -40,7 +40,7 @@ def handle_request(reqestId):
         carid:车辆id
         dist:车辆行驶的距离
 '''
-def recharged(carid, car_Ld, dist):
+def recharged(carid, dist):
     #1.获取车辆信息
     car = DataOperate.get_car(carid)
 
@@ -58,19 +58,19 @@ def recharged(carid, car_Ld, dist):
     #5.判断是否需要充电
     #5.1需要充电
     if car.Battery <= 10:
-        #5.1.1 拿到去往最经的充电站节点的路径以及距离
-        path_to_charging, dist_to_charging = MatchingAlgorithm.path_to_charging(car.Ld)
+        #5.1.1 计算出到哪个充电站充电可以最快完成充电,方法中顺便修改充电站的状态信息,fastest_charging_datetime(str)
+        fastest_charging_datetime,target = MatchingAlgorithm.fastest_charging_datetime(car.Ld, car.Battery)
 
-        arrive_datetime = DatetimeUtils.datetime_add(now_datetime, dist_to_charging / 1000)
-        car.Ld = path_to_charging[-1]
+
+        car.Ld = target
         car.Ls = car.Ld
         car.is_recharge = 1
-        carstate = [carid, arrive_datetime, 1]
 
-        #获取冲完电的时间，datetime类型
-        recharged_datetime = DatetimeUtils.recharged_datetime(arrive_datetime, car.Battery)
-        #提交定时任务修改车辆的状态
-        ApschedulerClient.update_car_is_recharge(recharged_datetime, carid)
+        # 提交定时任务修改车辆是否在充电的状态
+        ApschedulerClient.update_car_is_recharge(fastest_charging_datetime, carid)
+        #车辆状态信息
+        carstate = [carid, fastest_charging_datetime, 1]
+
 
     #不需要充电
     else:
@@ -79,8 +79,9 @@ def recharged(carid, car_Ld, dist):
 
         carstate = [carid, now_datetime, 1]
         pass
-    #5.在节点车辆状态表上拼接一行车辆状态信息
-    DataOperate.append_carstate(car_Ld, carstate)
+
+    # 5.在节点车辆状态表上拼接一行车辆状态信息
+    DataOperate.append_carstate(car.Ld, carstate)
     #6.修改车辆信息
     DataOperate.update_car(car)
 

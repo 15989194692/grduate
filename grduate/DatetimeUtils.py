@@ -43,14 +43,14 @@ def datetime_add(dt_string, minutes):
 充满电的时间
     input:
         arrive_datetime:到达充电站的时间
-        car_battery:车辆剩余电量
+        soc:车辆剩余电量
     
     output:
         datetime(datetime):冲完电的时间
 '''
-def recharged_datetime(arrive_datetime, car_battery):
+def recharged_datetime(arrive_datetime, soc):
     #要充多少电量
-    need_battery = 50 - car_battery
+    need_battery = 50 - soc
     #TODO 充电需要的时间
     need_min = need_battery / 30
     return datetime_add(arrive_datetime, need_min)
@@ -64,7 +64,9 @@ if __name__ == "__main__":
 
     #测试datetime_add方法
     now = cur_datetime()
-    print(now)
-    add = datetime_add(now, -4)
-    print(type(add))
-    print(add)
+    format = "'" + now + "'"
+    print(type(format))
+    # print(now)
+    # add = datetime_add(now, -4)
+    # print(type(add))
+    # print(add)

@@ -6,18 +6,24 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.schedulers.blocking import BlockingScheduler
 import time
 import datetime as dt
+import DataOperate
+
+def test():
+    test = 1
+    print(test)
 
 
 if __name__ == "__main__":
     pass
+    test()
     #测试cars修改是否起作用
     # cars[0].Ld = 89
     # GlobalVar.set_cars(10)
-    list = []
-    if list:
-        print(True)
-    else:
-        print(False)
+    # list = []
+    # if list:
+    #     print(True)
+    # else:
+    #     print(False)
     # now_time = dt.datetime.now().strftime("%F %T")
     # print(type(now_time))
     # print(now_time)

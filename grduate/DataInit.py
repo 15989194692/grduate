@@ -12,6 +12,32 @@ from Request import Request
 import DatetimeUtils
 import ApschedulerClient
 
+
+
+
+def data_to_map():
+    data,rows = DataOperate.get_data_from_csv()
+
+    fromnodes = data['FROMNODE']
+    tonodes = data['tonode']
+    lengths = data['length']
+
+    maps = {}
+    list = []
+
+    for i in range(0, rows):
+        fromnode = str(fromnodes[i])
+        tonode = str(tonodes[i])
+
+        if not fromnode in maps:
+            node = StreetNode(fromnode, 0, 0)
+            maps[fromnode] = node
+            list.insert(node.id, fromnode)
+
+        maps[fromnode].toNodes[tonode] = lengths[i]
+
+    return maps,list
+
 '''
 将街道节点保存到map中
 深圳市罗湖区&福田区的经纬度大概范围为：
@@ -55,7 +81,8 @@ def is_validate(x, y, START_X = 114, END_X = 114.2, START_Y = 22.45, END_Y = 22.
 '''
 def init_data():
     #拿到所有的街道节点
-    street_nodes, list = data2map()
+    # street_nodes, list = data2map()
+    street_nodes, list = data_to_map()
     #节点的个数
     size = len(street_nodes)
     print("拿到所有的街道节点数据,共有%s个节点，下面开始写入文件中..." %size)
@@ -64,12 +91,14 @@ def init_data():
     for key in street_nodes:
         node = street_nodes[key]
         distance, path = Dijkstra.dijkstra(node, street_nodes, list)
-        print(type(distance))
+        # print(type(distance))
         print("拿到第%s节点的数据，开始写入到对应文件中.." %node.id)
-        file_path = "distances/distance" + str(node.id) + ".txt"
+        # file_path = "distances/distance" + str(node.id) + ".txt"
+        file_path = "distances1/distance" + str(node.id) + ".txt"
         print("%s文件写入完成" %file_path)
         DataOperate.write_distancedata_to_txt(distance, file_path)
-        file_path = "paths/path" + str(node.id) + ".txt"
+        # file_path = "paths/path" + str(node.id) + ".txt"
+        file_path = "paths1/path" + str(node.id) + ".txt"
         print("%s文件写入完成" % file_path)
         DataOperate.write_distancedata_to_txt(path, file_path)
 
@@ -103,8 +132,9 @@ def init_car():
             path:当前车辆的路径规划
             batch_numbers:车辆上的乘客批数
             Battery(单位：kwh):电池剩余电量
+            is_recharge(0:否,1:是):是否在充电
         '''
-        car = Car(Lc, 0, Lc, Lc, [], 0, 50)
+        car = Car(Lc, 0, Lc, Lc, [], 0, 50, 0)
         cars.append(car)
         count += 1
         #更新Lc节点的车辆状态表([车辆id，到达该节点的时间，目的地是否为该节点(1:是，0:否)])
@@ -116,9 +146,20 @@ def init_car():
 '''
 自定义充电站在道路中的位置并写入到文件中
 '''
-def random_chargings():
-    #TODO
-    pass
+def random_chargings(size = 300):
+    chargings = []
+    i = 0
+    chargings_state_donedatetime = []
+    now = DatetimeUtils.cur_datetime()
+    while i < size:
+        charging = MathUtils.random_id()
+        if chargings.count(charging) == 0:
+            chargings.append(charging)
+            chargings_state_donedatetime.append("'" + now + "'")
+            i += 1
+    DataOperate.update_chargings(chargings)
+
+    DataOperate.update_chargings_state(chargings_state_carnumbers, chargings_state_donedatetime)
 
 
 '''
@@ -160,7 +201,7 @@ def random_request(hour):
         size:请求条数
         hour:延迟hour个小时
 '''
-def init_requests(hour = 0, size = 1200):
+def init_requests(size = 1200, hour = 0):
     for i in range(0, size):
         random_request(hour)
 
@@ -182,9 +223,16 @@ def create_empty_txt():
     print(os.listdir())
 
 if __name__ == "__main__":
-    car = NodeUtils.get_car(0)
-    print(car)
-    # init_data()
+    pass
+
+    #测试data_to_map
+    # maps,list = data_to_map()
+    # print(list)
+    # print(maps['30894'])
+
+    # car = NodeUtils.get_car(0)
+    # print(car)
+    init_data()
     # maps, list = data2map()
     # print(len(maps))
     # cars = init_car()
