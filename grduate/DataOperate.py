@@ -5,6 +5,7 @@ from datetime import datetime
 from Request import Request
 import json
 import pandas as pd
+import DatetimeUtils
 
 #文件路径
 paths_file_path = 'paths1/path'
@@ -178,7 +179,7 @@ def car_available(state, sourcedId):
     arrive_datetime = state[1]
     is_target = state[2]
     # 获取系统当前的时间，格式为：'YYYY-mm-dd HH:MM:SS' str类型
-    now_datetime = datetime.now().strftime("%F %T")
+    now_datetime = DatetimeUtils.cur_datetime()
     #判断车辆是否是在现在这个节点，若是，那么符合条件，判断车辆是否已经经过这个节点了，若已经过，那么这条记录无效了
     if (is_target == 1 and get_car(carid).Ls == sourcedId) or arrive_datetime >= now_datetime:
         return True
@@ -233,27 +234,54 @@ def append_carstate(sourcedId, carstate):
         f.write(str(carstate) + '\n')
 
 
+'''
+清空车辆状态表文件信息
+'''
+def clear_carstates(start = 0, end = 1426):
+    for i in range(start, end):
+        with open(carstates_file_path + str(i) + suffix, 'w') as f:
+            f.truncate()
 
 
 if __name__ == "__main__":
     pass
+    #测试clear_carstates方法
+    clear_carstates()
+
     #测试get_data_from_csv
     # data,rows = get_data_from_csv()
     # print(rows)
     # print(data['length'][0])
 
+    #测试get_chargings方法
+    # chargings = get_chargings()
+    # print(chargings)
+
+    #测试get_chargings_state方法
+    # chargings_state = get_chargings_state()
+    # print(chargings_state)
+    # print(type(chargings_state[0]))
+
+    #测试update_chargings_state方法
+    # chargings_state = []
+    # now = DatetimeUtils.cur_datetime()
+    # for i in range(12):
+    #     chargings_state.append(now)
+    # update_chargings_state(chargings_state)
+
+
     #测试get_car方法
-    car = get_car(0)
-    print(car)
-    print(("id : %s, Lc : %s, Pc : %s, Ls : %s, Ld : %s, path : %s, batch_numbers : %s, Battery : %s, is_recharge : %s" %(car.id, car.Lc, car.Pc, car.Ls, car.Ld, car.path, car.batch_numbers, car.Battery, car.is_recharge)))
+    # car = get_car(0)
+    # print(car)
+    # print(("id : %s, Lc : %s, Pc : %s, Ls : %s, Ld : %s, path : %s, batch_numbers : %s, Battery : %s, is_recharge : %s" %(car.id, car.Lc, car.Pc, car.Ls, car.Ld, car.path, car.batch_numbers, car.Battery, car.is_recharge)))
 
     #测试get_request方法
-    request = get_request(1)
-    print(request)
-    print("id : %s, Tp : %s, Ls : %s, Pr : %s, Ld : %s," % (request.id, request.Tp, request.Ls, request.Pr, request.Ld))
+    # request = get_request(1)
+    # print(request)
+    # print("id : %s, Tp : %s, Ls : %s, Pr : %s, Ld : %s," % (request.id, request.Tp, request.Ls, request.Pr, request.Ld))
 
     #测试get_carstate方法
-    carstate = get_carstate(0)
+    carstate = get_carstate(51)
     print(carstate)
 
     #测试update_carstate方法

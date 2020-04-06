@@ -4,15 +4,15 @@ import matplotlib.pyplot as plt
 import DataOperate
 
 # data = new_street.getData("C:/Users/13569/Desktop/shenzhen_poi.csv")
-data,rows = DataOperate.get_data_from_xlsx()
+# data,rows = DataOperate.get_data_from_xlsx()
+data, rows = DataOperate.get_data_from_csv()
+
 #产生测试数据
 #经度
-x = data[3]
-x = x[1::1]
+x = data['longitude']
 print(x)
 #纬度
-y = data[4]
-y = y[1::1]
+y = data['latitude']
 print(y)
 fig = plt.figure()
 ax1 = fig.add_subplot(111)

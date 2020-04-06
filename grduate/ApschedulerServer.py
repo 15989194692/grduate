@@ -24,7 +24,7 @@ def update_car_is_recharge(carid):
     car = DataOperate.get_car(carid)
     car.is_recharge = 0
     DataOperate.update_car(car)
-    # print('update_car_is_recharge')
+
 
 '''
 处理请求，为请求分配一辆车
@@ -76,9 +76,8 @@ def recharged(carid, dist):
     else:
         car.Ls = car.Ld
         car.is_recharge = 0
-
+        # 车辆状态信息
         carstate = [carid, now_datetime, 1]
-        pass
 
     # 5.在节点车辆状态表上拼接一行车辆状态信息
     DataOperate.append_carstate(car.Ld, carstate)

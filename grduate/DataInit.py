@@ -21,6 +21,10 @@ def data_to_map():
     fromnodes = data['FROMNODE']
     tonodes = data['tonode']
     lengths = data['length']
+    #经度x
+    longitudes = data['longitude']
+    #纬度y
+    latitudes = data['latitude']
 
     maps = {}
     list = []
@@ -30,7 +34,7 @@ def data_to_map():
         tonode = str(tonodes[i])
 
         if not fromnode in maps:
-            node = StreetNode(fromnode, 0, 0)
+            node = StreetNode(fromnode, longitudes[i], latitudes[i])
             maps[fromnode] = node
             list.insert(node.id, fromnode)
 
@@ -114,14 +118,18 @@ def init_data():
     batch_numbers:车辆上的乘客批数
     Battery(单位：kwh):电池剩余电量
 """
-def init_car():
+def init_car(size=1200):
+    #先初始化carstates文件夹中的carstate文件
+    DataOperate.clear_carstates()
+
     L = []
     count = 0
     cars = []
-    while count < 1200:
-        Lc = MathUtils.random_id()
-        if L.count(Lc) > 0:
+    while count < size:
+        Ls = MathUtils.random_id()
+        if L.count(Ls) > 0:
             continue
+        L.append(Ls)
         '''
         车辆信息：
             id:车辆唯一标识
@@ -134,14 +142,12 @@ def init_car():
             Battery(单位：kwh):电池剩余电量
             is_recharge(0:否,1:是):是否在充电
         '''
-        car = Car(Lc, 0, Lc, Lc, [], 0, 50, 0)
+        car = Car(Ls, 0, Ls, Ls, [], 0, 60, 0)
         cars.append(car)
         count += 1
         #更新Lc节点的车辆状态表([车辆id，到达该节点的时间，目的地是否为该节点(1:是，0:否)])
-        DataOperate.update_carstate(Lc, [[car.id, datetime.now().strftime("%F %T"), 1]])
+        DataOperate.update_carstate(Ls, [[car.id, DatetimeUtils.cur_datetime(), 1]])
         DataOperate.update_car(car)
-
-    return cars
 
 '''
 自定义充电站在道路中的位置并写入到文件中
@@ -159,7 +165,18 @@ def random_chargings(size = 300):
             i += 1
     DataOperate.update_chargings(chargings)
 
-    DataOperate.update_chargings_state(chargings_state_carnumbers, chargings_state_donedatetime)
+    DataOperate.update_chargings_state(chargings_state_donedatetime)
+
+
+'''
+初始化充电桩的状态信息，即完成对各自充电桩的最后一辆车充电的时间，这是初始化为系统的当前时间
+'''
+def init_chargings_state():
+    chargings_state = []
+    now = DatetimeUtils.cur_datetime()
+    for i in range(12):
+        chargings_state.append(now)
+    DataOperate.update_chargings_state(chargings_state)
 
 
 '''
@@ -206,17 +223,17 @@ def init_requests(size = 1200, hour = 0):
         random_request(hour)
 
 '''
-创建3425个空的txt文件
+创建1425个空的txt文件
 '''
 def create_empty_txt():
     # 将文件目录指定到新建的文件目录下
-    os.chdir('D:/pyCharm/py_workspace/grduate/cars')
+    os.chdir('D:/pyCharm/py_workspace/grduate/carstates')
     print(os.getcwd())  # 确认当前目录
 
     # 用open函数创建文件
     # 使用join拼写目录
     for i in range(0, 1200):
-        a = os.path.join('D:/pyCharm/py_workspace/grduate/cars', "car" +str(i) + '.txt')
+        a = os.path.join('D:/pyCharm/py_workspace/grduate/carstates', "carstate" +str(i) + '.txt')
         c = open(a, 'w')
 
     # 遍历文件夹下的所有文件
@@ -224,6 +241,9 @@ def create_empty_txt():
 
 if __name__ == "__main__":
     pass
+    # init_chargings_state()
+
+    init_car()
 
     #测试data_to_map
     # maps,list = data_to_map()
@@ -232,7 +252,7 @@ if __name__ == "__main__":
 
     # car = NodeUtils.get_car(0)
     # print(car)
-    init_data()
+    # init_data()
     # maps, list = data2map()
     # print(len(maps))
     # cars = init_car()

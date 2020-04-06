@@ -116,10 +116,14 @@ def remove_carstate(pathj_Ld, carid):
 
 '''
 将共享路径上的节点的车辆状态表增加车牌为carid的记录
+    input:
+        share_path:新的路径规划
+        carid:车辆id
+        Gj:在Gj节点去接乘客
+        arrive_Gj_datetime:车辆到达Gj节点的时间
 '''
-def add_carstate(share_path, carid, Gj):
+def add_carstate(share_path, carid, Gj, arrive_Gj_datetime):
     # 车辆到达Gj节点的时间
-    datetime_Gj = DataOperate.get_carstate(Gj)[1]
     cur_dist = 0
     pre = Gj
     for Gc in share_path[1:]:
@@ -127,7 +131,7 @@ def add_carstate(share_path, carid, Gj):
         pre = Gc
         #在txt文件上追加内容
         with open(carstates_file_path + str(Gc) + suffix, 'a') as f:
-            arrive_time = DatetimeUtils.datetime_add(datetime_Gj, cur_dist / 1000)
+            arrive_time = DatetimeUtils.datetime_add(arrive_Gj_datetime, cur_dist / 1000)
             is_Ld = 0
             if Gc == share_path[-1]:
                 is_Ld = 1
@@ -138,6 +142,10 @@ def add_carstate(share_path, carid, Gj):
 
 if __name__ == "__main__":
     pass
+
+    #测试add_carstate:方法
+    add_carstate([0, 1, 2, 4], 1, 0, '2020-04-07 00:19:00')
+
     #测试get_path
     # path = get_path(1, 1)
     # dist = get_dist(1, 1)
@@ -145,14 +153,26 @@ if __name__ == "__main__":
     # print(dist)
 
     #测试find_all_badnode方法
-    badnode = find_all_badnode(1425)
-    print(badnode)
+    # badnode = find_all_badnode(1425)
+    # print(badnode)
+
+    #测试get_dist方法
+    # dist1 = get_dist(0, 892)
+    # dist2 = get_dist(892, 0)
+    # print('dist1 = %s, dist2 = %s' %(dist1, dist2))
+
+    #测试get_path方法
+    # paht1 = get_path(0, 892)
+    # path2 = get_path(892, 0)
+    # print('paht1 = %s \n, path2 = %s' % (paht1, path2))
 
     #测试get_distance
-    # distance = get_distance(2)
-    # for i in distance:
-    #     if i == -1:
-    #         print(True)
+    # distance = get_distance(564)
+    # max = None
+    # for dist in distance:
+    #     if max == None or dist > max:
+    #         max = dist
+    # print('max = %s' %max)
 
     #测试update_car
     # update_car(0, [])

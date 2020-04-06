@@ -116,16 +116,20 @@ def path_to_charging(sourcedId):
 def charging_datetime(dist, soc, donedatetime):
     #计算出到达充电站后剩余的电量
     soc -= MathUtils.dist_cost(dist)
+    # print('soc = ', soc)
     #根据距离计算出到达充电站的时间
     arrive_datetime = str(DatetimeUtils.datetime_add(DatetimeUtils.cur_datetime(), dist / 1000))
+    # print('arrive_datetime = ', arrive_datetime)
+    # print('typeof arrive_datetime is', type(arrive_datetime))
 
     #如果充电站完成对当前充电站最后一辆车充电的时间大于到达的时间，那么按完成时间开始算，否则按到达时间算
     if donedatetime >= arrive_datetime:
-        charging_datetime = DatetimeUtils.recharged_datetime(donedatetime, soc)
+        cd = str(DatetimeUtils.recharged_datetime(donedatetime, soc))
     else:
-        charging_datetime = DatetimeUtils.recharged_datetime(arrive_datetime, soc)
-
-    return str(charging_datetime)
+        cd = str(DatetimeUtils.recharged_datetime(arrive_datetime, soc))
+    # print('typeof cd is ', type(cd))
+    # print('cd = ', cd)
+    return cd
 
 '''
 最快完成充电的时间，前提是当前汽车可达充电站
@@ -139,21 +143,31 @@ def charging_datetime(dist, soc, donedatetime):
 def fastest_charging_datetime(sourcedId, soc):
     #获取充电站所有的节点位置id，为list类型
     chargings = DataOperate.get_chargings()
+    # print('chargings = ', chargings)
     '''
     获取每个充电站的状态信息
         chargings_state_donedatetime：每个充电站什么时间完成对当前充电站最后一辆车的充电
     '''
     chargings_state_donedatetime = DataOperate.get_chargings_state()
+    # print('chargings_state_donedatetime = ', chargings_state_donedatetime)
+    # print('typeof chargings_state_donedatetime is ', type(chargings_state_donedatetime))
 
     fastest_charging_datetime = None
     target_index = -1
-
     i = 0
     for charging in chargings:
         #获取起始地到充电站的距离
         dist = NodeUtils.get_dist(sourcedId, charging)
+        #判断是否能够到达充电站
+        if not enough_battery_to_target(dist, soc):
+            continue
+        # print('charging = ', charging)
+        # print('chargings_state_donedatetime[%s] is %s' % (i, chargings_state_donedatetime[i]))
+        # print('typeof chargings_state_donedatetime[%s] is %s' % (i, type(chargings_state_donedatetime[i])))
         #计算出 若到该充电站充电的话，完成充电的时间
         cd = charging_datetime(dist, soc, chargings_state_donedatetime[i])
+        # print('cd = ', cd)
+        # print('type of cd is', cd)
         #如果最少时间为None或者比cd大的话，更新最小时间
         if fastest_charging_datetime == None or fastest_charging_datetime > cd:
             fastest_charging_datetime = cd
@@ -161,7 +175,7 @@ def fastest_charging_datetime(sourcedId, soc):
         i += 1
 
     #修改充电站状态信息
-    chargings_state_donedatetime[target_index] = "'" + fastest_charging_datetime + "'"
+    chargings_state_donedatetime[target_index] = fastest_charging_datetime
     DataOperate.update_chargings_state(chargings_state_donedatetime)
 
     return fastest_charging_datetime,chargings[target_index]
@@ -173,7 +187,6 @@ def fastest_charging_datetime(sourcedId, soc):
         request:一个用户请求
         
     output:
-        car_start:符合条件的车辆集合[[车辆id，当前车辆的目的地，在节点Gj去接拼车乘客，到达Gj节点的时间，车辆的出发地], ...]
         car_start:符合条件的车辆集合[[车辆对象，在节点Gj去接拼车乘客，到达Gj节点的时间], ...]
 '''
 def origin_match(request):
@@ -181,18 +194,18 @@ def origin_match(request):
     car_start = []
     #标记一辆车是否已经访问过
     vis = np.zeros(1200, dtype="int16")
-    #1.对于一个请求request，根据其出发地Ls和目的地Ld，规划出它的行程路径Rp：[Gp1, Gp2, Gp3,..., Gpn]
+    #1.获取请求的出发地和目的地
     request_Ls = request.Ls
     # Ld = request.Ld
     # Rp = get_path(Ls, Ld)
     #2.对于request的出发地Ls，将其对应到所在的节点Gp1，由前面计算好的节点间距离可以得到Gp1节点到其他节点的距离distance
     # distance = get_distance(Ls)
     #3.对于其中的每个可达节点，选出能在用户要求时间内接到用户的车辆：
-    for i in range(0, 3425):
+    for i in range(0, 1426):
         # 节点i到节点Ls的最短距离 单位：m
         dist = NodeUtils.get_dist(i, request_Ls)
-        #判断i节点是否能到达request.Ls节点，即用户的出发节点, and 两个节点的距离小于等于 10000m
-        if dist < 0 or dist > 10000:
+        #判断i节点是否能到达request.Ls节点，即用户的出发节点, and 两个节点的距离小于等于 5000m
+        if dist < 0 or dist > 5000:
             continue
         #拿到i节点的车辆状态表[[车辆编号, 预计到达该节点时间,该节点是否为目的地(0:否，1:是)], ...]
         carstate = DataOperate.get_carstate(i)
@@ -212,7 +225,7 @@ def origin_match(request):
                 continue
             #如果车辆当前的乘客批数为0，即没有乘客的话，那么是符合条件的，不需要进行其他的判断了
             if car.batch_numbers == 0:
-                car_start.append([carid, car.Ld, i, DatetimeUtils.cur_datetime()])
+                car_start.append([car, i, DatetimeUtils.cur_datetime()])
                 continue
             #如果车辆已有两批乘客在拼车，则不考虑
             if car.batch_numbers > 1:
@@ -222,14 +235,11 @@ def origin_match(request):
                 continue
             #车辆从节点i到节点Ls所需行驶时间 假设速度恒定为：60km/h -> 1000m/min
             ti_Ls = dist / 1000
-            #TODO (不需要了) 因为这个时延不应该太长，所以可以假定一个极限值10min，以此加快迭代速度
-            # if ti_Ls > 5:
-            #     continue
-            #车辆carid到i节点的时间
-            ti = state[1]
+
             #判断车辆carid到i节点的时间 + 车辆从节点i到节点Ls所需的行驶时间 <= 用户请求的出发时间Tp + 用户可以容忍的等待时间Ts(定值 10min)
-            if ti + ti_Ls <= request.Tp + 10:
-                # car_start.append([carid, car.Ld, i, arrive_datetime, car.Ls])
+            can_endure_datetime = str(DatetimeUtils.datetime_add(request.Tp, 10))
+            arrive_Ls_datetime = str(DatetimeUtils.datetime_add(arrive_datetime, ti_Ls))
+            if arrive_Ls_datetime <=  can_endure_datetime:
                 car_start.append([car, i, arrive_datetime])
 
     return car_start
@@ -239,11 +249,9 @@ def origin_match(request):
 目的地匹配
     input:
         request:一个用户请求
-        car_start_:出发地匹配成功的车辆集合[[车辆id，当前车辆的目的地，在节点Gj去接拼车乘客，到达Gj节点的时间，车辆的出发地], ...]
         car_start:符合条件的车辆集合[[车辆对象，在节点Gj去接拼车乘客，到达Gj节点的时间], ...]
         
     output:
-        car_end:符合条件的车辆集合[[车辆id，在Gj节点去接拼车乘客，到达Gj节点的时间，先送原始乘客或先送拼车乘客(1:先送拼车乘客，2：先送原始乘客), 车辆当前的目的地，车辆的出发地], ...]
         car_end:符合条件的车辆集合[[车辆对象，在Gj节点去接拼车乘客，到达Gj节点的时间，先送原始乘客或先送拼车乘客(0:这是第一批乘客,1:先送拼车乘客，2：先送原始乘客)], ...]
         
 '''
@@ -256,7 +264,8 @@ def target_match(request, car_start):
         Gj = car_s[1]
         arrive_Gj_datetime = car_s[2]
 
-        if car.batch_numbers:
+        #如果为空车状态，不用进行目的地匹配
+        if car.batch_numbers == 0:
             car_end.append([car, Gj, arrive_Gj_datetime, 0])
             continue
         '''
@@ -271,7 +280,6 @@ def target_match(request, car_start):
         对于第一种情况，遍历Rc路径上的所有节点Gc，检查Gc节点到request.Ld节点的所需时间tc_Ld * 2 <= 10
         '''
         min = None
-        # Gi = None
         situation = None
         # 获取请求的起点request.Ls到车辆当前的目的地car.Ld的路径Rc = [request.Ls, ..., car.Ld]
         Rc = NodeUtils.get_path(request.Ls, car.Ld)
@@ -285,7 +293,6 @@ def target_match(request, car_start):
             if dist >= 0 and dist <= 5000:
                 if min == None or dist < min:
                     min = dist
-                    # Gi = Gc
                     situation = 1
 
 
@@ -315,11 +322,9 @@ def target_match(request, car_start):
 '''
 选取最优方案
     input:
-        car_end:目的地匹配成功的出租车集合[[车辆id，在Gj节点去接拼车乘客，到达Gj节点的时间，先送原始乘客或先送拼车乘客(1:先送拼车乘客，2：先送原始乘客), 车辆当前的目的地，车辆的出发地], ...]
         car_end:符合条件的车辆集合[[车辆对象，在Gj节点去接拼车乘客，到达Gj节点的时间，先送原始乘客或先送拼车乘客(0:这是第一批乘客,1:先送拼车乘客，2：先送原始乘客)], ...]
         request:一个用户请求
     output:
-        car_best:最优的出租车[车辆id，在Gj节点去接拼车乘客，到达Gj节点的时间，车辆当前的目的地,先送原始乘客或先送拼车乘客(1:先送拼车乘客，2：先送原始乘客)，从Gj节点到request.Ls节点再到request.Ld(car.Ld)节点再到car.Ld(request.Ld)节点的距离,车辆的出发地]
         car_best:最优的出租车[车辆对象，在Gj节点去接拼车乘客，到达Gj节点的时间,先送原始乘客或先送拼车乘客(0:这是第一批乘客,1:先送拼车乘客，2：先送原始乘客)，从Gj节点到request.Ls节点再到request.Ld(car.Ld)节点再到car.Ld(request.Ld)节点的距离]
         
 '''
@@ -340,7 +345,7 @@ def optimal_solution(car_end, request):
         if car.batch_numbers == 0 and not car_best:
             if min_dist_Gj_Ls == None or min_dist_Gj_Ls > distj_Ls:
                 min_dist_Gj_Ls = distj_Ls
-                car_best = [car, Gj, arrive_Gj_datetime, 0, -1]
+                car_best = [car, Gj, arrive_Gj_datetime, 0, distj_Ls + NodeUtils.get_dist(request.Ls, request.Ld)]
             continue
 
         # TODO 考虑是否还需要 1.获取每辆车从Gj节点到它当前目的地car.Ld节点的距离distj_Ld
@@ -368,7 +373,6 @@ def optimal_solution(car_end, request):
 '''
 匹配成功后的处理:
     input:
-        car_best:得到的最优出租车[车辆id，在Gj节点去接拼车乘客，到达Gj节点的时间，车辆当前的目的地,先送原始乘客或先送拼车乘客(1:先送拼车乘客，2：先送原始乘客)，从Gj节点到request.Ls节点再到request.Ld(car.Ld)节点再到car.Ld(request.Ld)节点的距离,车辆的出发地]
         car_best:得到的最优出租车[车辆对象，在Gj节点去接拼车乘客，到达Gj节点的时间，先送原始乘客或先送拼车乘客(1:先送拼车乘客，2：先送原始乘客)，从Gj节点到request.Ls节点再到request.Ld(car.Ld)节点再到car.Ld(request.Ld)节点的距离]
         request:一个用户请求
 '''
@@ -390,7 +394,7 @@ def after_match(car_best, request):
         NodeUtils.remove_carstate(pathj_Ld, car.id)
 
 
-    #拿到Gj到request.Ls节点的路径
+    #拿到Gj节点->request.Ls节点->request.Ld节点
     if situation == 0:
         share_path = get_first_path(Gj, request.Ls, request.Ld)
         car.Ld = request.Ld
@@ -401,7 +405,8 @@ def after_match(car_best, request):
         share_path = get_share_path(Gj, request.Ls, car.Ld, request.Ld)
         #修改车辆目的地
         car.Ld = request.Ld
-    NodeUtils.add_carstate(share_path, car.id, Gj)
+    #在新的路径上的节点的车辆状态表上加上一行新的行车记录
+    NodeUtils.add_carstate(share_path, car.id, Gj, arrive_Gj_datetime)
 
 
     #获取车辆出发地car.Ls到Gj节点的距离distLs_Gj
@@ -409,7 +414,7 @@ def after_match(car_best, request):
     #算出car.Ls -> 新的目的地的距离 distLs_Ld
     distLs_Ld = distLs_Gj + distGj_Ld1_Ld2
     #计算到达目的地的时间
-    arrive_target_datetime = DatetimeUtils.datetime_add(arrive_Gj_datetime, distGj_Ld1_Ld2 / 1000)
+    arrive_target_datetime = str(DatetimeUtils.datetime_add(arrive_Gj_datetime, distGj_Ld1_Ld2 / 1000))
 
     # 更新车辆信息，特别是batch_numbers
     DataOperate.update_car(car)
@@ -430,32 +435,53 @@ def matching_car(request):
     #需要做相关判断，如集合为空等
     car_start = origin_match(request)
     if not car_start:
+        if request.Tp + 10 > execute_datetime:
+            print('已超过请求出发时间10分钟，该请求将不再被执行')
+            return
         print('在请求出发地附近找不到匹配车辆,请求将在30s后再次被执行')
         #提交定时任务
         ApschedulerClient.handle_request_job(request.id, execute_datetime)
         return
     car_end = target_match(request, car_start)
     if not car_end:
+        if request.Tp + 10 > execute_datetime:
+            print('已超过请求出发时间10分钟，该请求将不再被执行')
+            return
         print('找不到合适的车辆，请求将在30s后再次被执行')
         #提交定时任务
         ApschedulerClient.handle_request_job(request.id, execute_datetime)
         return
     car_best = optimal_solution(car_end, request)
     if not car_best:
+        if request.Tp + 10 > execute_datetime:
+            print('已超过请求出发时间10分钟，该请求将不再被执行')
+            return
         print('找不到合适的车辆，请求将在30s后再次被执行')
         # 提交定时任务
         ApschedulerClient.handle_request_job(request.id, execute_datetime)
         return
     after_match(car_best, request)
-    print('已为id为%s的请求匹配到车辆，车辆id为%s' %(request.id, car_best[0]))
+    print('已为id为%s的请求匹配到车辆，车辆id为%s' %(request.id, car_best[0].id))
 
 
 if __name__ == "__main__":
     pass
     #测试定时任务
-    ApschedulerClient.arrival_job('2020-03-31 19:21:00', 0)
-    job = ApschedulerClient.get_job('0')
-    print(job)
+    # ApschedulerClient.arrival_job('2020-03-31 19:21:00', 0)
+    # job = ApschedulerClient.get_job('0')
+    # print(job)
+
+    #测试charging_datetime方法
+    # donedatetime = DataOperate.get_chargings_state()
+    #
+    # charging_datetime = charging_datetime(4959.96999999, 10, donedatetime[0])
+    # print(charging_datetime)
+    # print(type(charging_datetime))
+
+    #测试fastest_charging_datetime方法
+    for i in range(1425):
+        fcd, target = fastest_charging_datetime(i, 10)
+        print(fcd, target)
 
     # share_path = []
     # pathj_Ls = [1, 4, 3]

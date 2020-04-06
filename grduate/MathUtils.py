@@ -31,6 +31,21 @@ def random_time():
 def random_pr():
     return random.randint(1, 3)
 
+
+'''
+任意生成充电桩所在节点id
+'''
+def random_chargings(size = 12):
+    chargings = []
+    i = 0
+    while i < size:
+        id = random_id()
+        if chargings.count(id) == 0:
+            chargings.append(id)
+            i += 1
+
+    return chargings
+
 '''
 计算行驶距离消耗的电量
     input:
@@ -55,6 +70,18 @@ def dist_cost(dist):
 
 
 if __name__ == '__main__':
+    pass
+
+    #测试random_id方法
+    for i in range(2000):
+        id = random_id()
+        if id == 1426:
+            print(id)
+
     #测试random_pr方法
-    for i in range(0, 10):
-        print(random_pr())
+    # for i in range(0, 10):
+    #     print(random_pr())
+
+    #测试dist_cost方法
+    # cost = dist_cost(500000)
+    # print(cost)
