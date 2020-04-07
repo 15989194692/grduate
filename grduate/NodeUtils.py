@@ -5,8 +5,8 @@ import ast
 import DatetimeUtils
 
 #文件路径
-paths_file_path = 'paths1/path'
-distances_file_path = 'distances1/distance'
+paths_file_path = 'paths/path'
+distances_file_path = 'distances/distance'
 cars_file_path = 'cars/car'
 carstates_file_path = 'carstates/carstate'
 chargings_file_path = 'chargings/chargings'
@@ -107,12 +107,12 @@ def get_distances():
 def remove_carstate(pathj_Ld, carid):
     for Gc in pathj_Ld[1:]:
         new_carstate = []
-        with open(carstates_file_path + Gc + suffix, 'r') as f:
+        with open(carstates_file_path + str(Gc) + suffix, 'r') as f:
             for line in f:
                 state = ast.literal_eval(line.rstrip("\n"))
                 if state[0] != carid:
                     new_carstate.append(state)
-        DatetimeUtils.update_carstate(Gc, new_carstate)
+        DataOperate.update_carstate(Gc, new_carstate)
 
 '''
 将共享路径上的节点的车辆状态表增加车牌为carid的记录
@@ -144,23 +144,39 @@ if __name__ == "__main__":
     pass
 
     #测试add_carstate:方法
-    add_carstate([0, 1, 2, 4], 1, 0, '2020-04-07 00:19:00')
+    # add_carstate([0, 1, 2, 4], 1, 0, '2020-04-07 00:19:00')
+
+    #测试remove_carstate方法
+    # remove_carstate([0, 3, 5], 3)
 
     #测试get_path
-    # path = get_path(1, 1)
-    # dist = get_dist(1, 1)
+    # path = get_path(1, 123)
+    # dist = get_dist(1, 123)
+    # cur_dist = 0
+    # pre = path[0]
+    # for Gc in path[1:]:
+    #     cur_dist += get_dist(pre, Gc)
+    #     pre = Gc
+    # print(cur_dist)
     # print(path)
     # print(dist)
 
     #测试find_all_badnode方法
-    # badnode = find_all_badnode(1425)
+    # badnode = find_all_badnode(1426)
     # print(badnode)
 
     #测试get_dist方法
-    # dist1 = get_dist(0, 892)
-    # dist2 = get_dist(892, 0)
-    # print('dist1 = %s, dist2 = %s' %(dist1, dist2))
-
+    dist1 = get_dist(1421, 1108)
+    dist2 = get_dist(1108, 1421)
+    print('dist1 = %s, dist2 = %s' %(dist1, dist2))
+    min = None
+    for i in range(1426):
+        if i == 1108:
+            continue
+        dist = get_dist(i, 1108)
+        if min == None or dist < min:
+            min = dist
+    print(min)
     #测试get_path方法
     # paht1 = get_path(0, 892)
     # path2 = get_path(892, 0)

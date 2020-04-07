@@ -8,8 +8,8 @@ import pandas as pd
 import DatetimeUtils
 
 #文件路径
-paths_file_path = 'paths1/path'
-distances_file_path = 'distances1/distance'
+paths_file_path = 'paths/path'
+distances_file_path = 'distances/distance'
 cars_file_path = 'cars/car'
 carstates_file_path = 'carstates/carstate'
 chargings_file_path = 'chargings/chargings'
@@ -126,9 +126,9 @@ def get_car(carid):
     with open(cars_file_path + str(carid) + suffix, 'r') as f:
         for line in f:
             car = ast.literal_eval(line.rstrip("\n"))
+    # print(car)
     #def __init__(self, Lc, Pc, Ls, Ld, path, batch_numbers, Battery, is_recharge)
-    c = Car(car[1], car[2], car[3], car[4], car[5], car[6], car[7], car[8])
-    c.id = car[0]
+    c = Car(car[0], car[1], car[2], car[3], car[4], car[5], car[6])
     return c
 
 
@@ -180,8 +180,10 @@ def car_available(state, sourcedId):
     is_target = state[2]
     # 获取系统当前的时间，格式为：'YYYY-mm-dd HH:MM:SS' str类型
     now_datetime = DatetimeUtils.cur_datetime()
+    #获取车辆信息
+    car= get_car(carid)
     #判断车辆是否是在现在这个节点，若是，那么符合条件，判断车辆是否已经经过这个节点了，若已经过，那么这条记录无效了
-    if (is_target == 1 and get_car(carid).Ls == sourcedId) or arrive_datetime >= now_datetime:
+    if (is_target == 1 and car.Ls == car.Ld and car.Ls == sourcedId) or arrive_datetime >= now_datetime:
         return True
     return False
 
@@ -207,7 +209,7 @@ def get_carstate(sourcedId):
             else:
                 update = True
     if update == True:
-        print("更新%s节点的车辆状态表" %sourcedId)
+        # print("更新%s节点的车辆状态表" %sourcedId)
         update_carstate(sourcedId, carstate)
     return carstate
 

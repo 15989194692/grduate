@@ -80,6 +80,7 @@ def data2map():
 def is_validate(x, y, START_X = 114, END_X = 114.2, START_Y = 22.45, END_Y = 22.6):
     return ((x >= START_X and x <= END_X) and (y >= START_Y and y <= END_Y))
 
+
 '''
 事先计算好各个节点之间实际行驶距离以及需要的行驶时间,并把其写入到txt文件中
 '''
@@ -98,11 +99,11 @@ def init_data():
         # print(type(distance))
         print("拿到第%s节点的数据，开始写入到对应文件中.." %node.id)
         # file_path = "distances/distance" + str(node.id) + ".txt"
-        file_path = "distances1/distance" + str(node.id) + ".txt"
+        file_path = "distances/distance" + str(node.id) + ".txt"
         print("%s文件写入完成" %file_path)
         DataOperate.write_distancedata_to_txt(distance, file_path)
         # file_path = "paths/path" + str(node.id) + ".txt"
-        file_path = "paths1/path" + str(node.id) + ".txt"
+        file_path = "paths/path" + str(node.id) + ".txt"
         print("%s文件写入完成" % file_path)
         DataOperate.write_distancedata_to_txt(path, file_path)
 
@@ -122,14 +123,14 @@ def init_car(size=1200):
     #先初始化carstates文件夹中的carstate文件
     DataOperate.clear_carstates()
 
-    L = []
-    count = 0
-    cars = []
-    while count < size:
+    exist = np.zeros(1426, dtype='int16')
+    id = 0
+    # cars = []
+    while id < size:
         Ls = MathUtils.random_id()
-        if L.count(Ls) > 0:
+        if exist[Ls] == 1:
             continue
-        L.append(Ls)
+        exist[Ls] = 1
         '''
         车辆信息：
             id:车辆唯一标识
@@ -142,12 +143,13 @@ def init_car(size=1200):
             Battery(单位：kwh):电池剩余电量
             is_recharge(0:否,1:是):是否在充电
         '''
-        car = Car(Ls, 0, Ls, Ls, [], 0, 60, 0)
-        cars.append(car)
-        count += 1
+        #def __init__(self, id, Pc, Ls, Ld, batch_numbers, Battery, is_recharge)
+        car = Car(id, 0, Ls, Ls, 0, 60, 0)
+        # cars.append(car)
         #更新Lc节点的车辆状态表([车辆id，到达该节点的时间，目的地是否为该节点(1:是，0:否)])
-        DataOperate.update_carstate(Ls, [[car.id, DatetimeUtils.cur_datetime(), 1]])
+        DataOperate.append_carstate(Ls, [id, DatetimeUtils.cur_datetime(), 1])
         DataOperate.update_car(car)
+        id += 1
 
 '''
 自定义充电站在道路中的位置并写入到文件中
@@ -178,6 +180,28 @@ def init_chargings_state():
         chargings_state.append(now)
     DataOperate.update_chargings_state(chargings_state)
 
+
+'''
+自定义一个请求
+'''
+def my_request():
+    # 0.获取当前系统时间
+    now = DatetimeUtils.cur_datetime()
+    # 1.随机生成1-55的数，代表多少分钟后执行定时任务
+    minute = 0.1
+    # 2.出发时间统一在请求发出的5分钟后
+    Tp = DatetimeUtils.datetime_add(now, minute + 5)
+    # 3.随机生成需求座位数1-3
+    Pr = MathUtils.random_pr()
+    # 4.随机生成出发地和目的地
+    Ls, Ld = MathUtils.random_sour_targ()
+    # 5.生成Request对象
+    request = Request(Tp, Ls, Pr, Ld)
+    # 6.写入到文件中
+    DataOperate.update_request(request)
+    # 7.提交定时任务到定时任务服务器
+    execute_datetime = str(DatetimeUtils.datetime_add(str(Tp), -5))
+    ApschedulerClient.handle_request_job(request.id, execute_datetime)
 
 '''
 自定义请求并写入到文件中，通过定时任务，可以模拟发出请求
@@ -243,16 +267,20 @@ if __name__ == "__main__":
     pass
     # init_chargings_state()
 
-    init_car()
+    # init_car()
 
     #测试data_to_map
     # maps,list = data_to_map()
     # print(list)
     # print(maps['30894'])
-
-    # car = NodeUtils.get_car(0)
-    # print(car)
-    # init_data()
+    # cars = []
+    # for i in range(1200):
+    #     car = DataOperate.get_car(i)
+    #     # print(car)
+    #     cars.append(car)
+    #
+    # print('test')
+    init_data()
     # maps, list = data2map()
     # print(len(maps))
     # cars = init_car()

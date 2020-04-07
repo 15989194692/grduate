@@ -7,6 +7,7 @@ from apscheduler.schedulers.blocking import BlockingScheduler
 import time
 import datetime as dt
 import DataOperate
+import NodeUtils
 
 def test():
     test = 1
@@ -15,7 +16,24 @@ def test():
 
 if __name__ == "__main__":
     pass
-    test()
+
+    for sour in range(1426):
+        for targ in range(1426):
+            path = NodeUtils.get_path(sour, targ)
+            dist = NodeUtils.get_dist(sour, targ)
+            cur_dist = 0
+            pre = path[0]
+            for Gc in path[1:]:
+                cur_dist += NodeUtils.get_dist(pre, Gc)
+                pre = Gc
+
+            # print(path)
+            # print(dist)
+            # print(cur_dist)
+            if (cur_dist != dist):
+
+                print('%s -> %s' %(sour, targ))
+
     #测试cars修改是否起作用
     # cars[0].Ld = 89
     # GlobalVar.set_cars(10)

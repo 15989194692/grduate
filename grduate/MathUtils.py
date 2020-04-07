@@ -23,7 +23,10 @@ def random_sour_targ():
 随机生成1-55的数，单位为分钟
 '''
 def random_time():
-    return random.randint(1, 55)
+    #生成1-55范围内的随机小数
+    min = random.uniform(1, 55)
+
+    return round(min, 2)
 
 '''
 随机生成乘客数，输出为1-3

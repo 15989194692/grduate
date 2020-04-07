@@ -41,6 +41,7 @@ def handle_request(reqestId):
         dist:车辆行驶的距离
 '''
 def recharged(carid, dist):
+    print('车辆%s已到达目的地' %carid)
     #1.获取车辆信息
     car = DataOperate.get_car(carid)
 

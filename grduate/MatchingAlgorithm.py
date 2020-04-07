@@ -6,6 +6,7 @@ import DataOperate
 import ApschedulerClient
 import DatetimeUtils
 import MathUtils
+from Car import Car
 
 '''
 算出从request_Ls到目的地Ld1再从Ld1到Ld2的总距离
@@ -182,14 +183,23 @@ def fastest_charging_datetime(sourcedId, soc):
 
 
 '''
+判断车辆的信息是否已经改变过以至于不符合条件了
+'''
+def is_carstate_change(using_car, real_car):
+    #def __init__(self, id, Pc, Ls, Ld, batch_numbers, Battery, is_recharge):
+    return using_car.id != real_car.id or using_car.Pc != real_car.Pc or using_car.Ls != real_car.Ls or using_car.Ld != real_car.Ld or using_car.batch_numbers != real_car.batch_numbers or using_car.Battery != real_car.Battery or using_car.is_recharge != real_car.is_recharge
+
+
+'''
 出发地匹配 
     input:
         request:一个用户请求
         
     output:
-        car_start:符合条件的车辆集合[[车辆对象，在节点Gj去接拼车乘客，到达Gj节点的时间], ...]
+        car_start:符合条件的车辆集合[[车辆id，在节点Gj去接拼车乘客，到达Gj节点的时间], ...]
 '''
 def origin_match(request):
+    # print('开始进行出发地匹配')
     #结果集
     car_start = []
     #标记一辆车是否已经访问过
@@ -241,7 +251,7 @@ def origin_match(request):
             arrive_Ls_datetime = str(DatetimeUtils.datetime_add(arrive_datetime, ti_Ls))
             if arrive_Ls_datetime <=  can_endure_datetime:
                 car_start.append([car, i, arrive_datetime])
-
+    # print('car_start = %s' % car_start)
     return car_start
 
 
@@ -249,18 +259,22 @@ def origin_match(request):
 目的地匹配
     input:
         request:一个用户请求
-        car_start:符合条件的车辆集合[[车辆对象，在节点Gj去接拼车乘客，到达Gj节点的时间], ...]
+        car_start:符合条件的车辆集合[[车辆id，在节点Gj去接拼车乘客，到达Gj节点的时间], ...]
         
     output:
-        car_end:符合条件的车辆集合[[车辆对象，在Gj节点去接拼车乘客，到达Gj节点的时间，先送原始乘客或先送拼车乘客(0:这是第一批乘客,1:先送拼车乘客，2：先送原始乘客)], ...]
+        car_end:符合条件的车辆集合[[车辆id，在Gj节点去接拼车乘客，到达Gj节点的时间，先送原始乘客或先送拼车乘客(0:这是第一批乘客,1:先送拼车乘客，2：先送原始乘客)], ...]
         
 '''
 def target_match(request, car_start):
+    # print('开始进行目的地匹配')
     #结果集
     car_end = []
 
     for car_s in car_start:
         car = car_s[0]
+        #判断车辆状态信息是否已经改变了
+        if is_carstate_change(car, DataOperate.get_car(car.id)):
+            continue
         Gj = car_s[1]
         arrive_Gj_datetime = car_s[2]
 
@@ -316,24 +330,28 @@ def target_match(request, car_start):
         if min != None:
             #[[车辆对象，在Gj节点去接拼车乘客，到达Gj节点的时间，先送原始乘客或先送拼车乘客(1:先送拼车乘客，2：先送原始乘客)], ...]
             car_end.append([car, Gj, arrive_Gj_datetime, situation])
-
+    # print('car_end = %s' % car_end)
     return car_end
 
 '''
 选取最优方案
     input:
-        car_end:符合条件的车辆集合[[车辆对象，在Gj节点去接拼车乘客，到达Gj节点的时间，先送原始乘客或先送拼车乘客(0:这是第一批乘客,1:先送拼车乘客，2：先送原始乘客)], ...]
+        car_end:符合条件的车辆集合[[车辆id，在Gj节点去接拼车乘客，到达Gj节点的时间，先送原始乘客或先送拼车乘客(0:这是第一批乘客,1:先送拼车乘客，2：先送原始乘客)], ...]
         request:一个用户请求
     output:
-        car_best:最优的出租车[车辆对象，在Gj节点去接拼车乘客，到达Gj节点的时间,先送原始乘客或先送拼车乘客(0:这是第一批乘客,1:先送拼车乘客，2：先送原始乘客)，从Gj节点到request.Ls节点再到request.Ld(car.Ld)节点再到car.Ld(request.Ld)节点的距离]
+        car_best:最优的出租车[车辆id，在Gj节点去接拼车乘客，到达Gj节点的时间,先送原始乘客或先送拼车乘客(0:这是第一批乘客,1:先送拼车乘客，2：先送原始乘客)，从Gj节点到request.Ls节点再到request.Ld(car.Ld)节点再到car.Ld(request.Ld)节点的距离]
         
 '''
 def optimal_solution(car_end, request):
-    min_detour_dist = None
+    # print('开始寻找最优解')
+    max_detour_dist = None
     car_best = None
     min_dist_Gj_Ls = None
     for car_e in car_end:
         car = car_e[0]
+        #判断车辆状态信息是否已经改变了
+        if is_carstate_change(car, DataOperate.get_car(car.id)):
+            continue
         Gj = car_e[1]
         arrive_Gj_datetime = car_e[2]
         situation = car_e[3]
@@ -342,10 +360,10 @@ def optimal_solution(car_end, request):
         distj_Ls = NodeUtils.get_dist(Gj, request.Ls)
 
         # 2.判断是否是第一批乘客,是的话没有拼车这一说，如果可以拼车的话，优先拼车
-        if car.batch_numbers == 0 and not car_best:
-            if min_dist_Gj_Ls == None or min_dist_Gj_Ls > distj_Ls:
-                min_dist_Gj_Ls = distj_Ls
-                car_best = [car, Gj, arrive_Gj_datetime, 0, distj_Ls + NodeUtils.get_dist(request.Ls, request.Ld)]
+        if situation == 0:
+            if max_detour_dist == None and (min_dist_Gj_Ls == None or min_dist_Gj_Ls > distj_Ls):
+                    min_dist_Gj_Ls = distj_Ls
+                    car_best = [car, Gj, arrive_Gj_datetime, 0, distj_Ls + NodeUtils.get_dist(request.Ls, request.Ld)]
             continue
 
         # TODO 考虑是否还需要 1.获取每辆车从Gj节点到它当前目的地car.Ld节点的距离distj_Ld
@@ -364,20 +382,27 @@ def optimal_solution(car_end, request):
             distLs_Ld = get_sharedist(request.Ls, car.Ld, request.Ld)
         # 5.算出绕路的距离 detour_dist = (distLs_Ld1 + distLs_Ld2) - distLs_Ld + distj_Ls
         detour_dist = (distLs_Ld1 + distLs_Ld2) - distLs_Ld + distj_Ls
+        detour_dist = (distLs_Ld1 + distLs_Ld2) - distLs_Ld - distj_Ls
         # 6.找到最小的绕路距离车辆
-        if min_detour_dist == None or min_detour_dist > detour_dist:
+        if max_detour_dist == None or max_detour_dist > detour_dist:
+            max_detour_dist = detour_dist
             car_best = [car, Gj, arrive_Gj_datetime, situation, distj_Ls + distLs_Ld]
-
+    # print('car_best = %s' % car_best)
     return car_best
+
 
 '''
 匹配成功后的处理:
     input:
-        car_best:得到的最优出租车[车辆对象，在Gj节点去接拼车乘客，到达Gj节点的时间，先送原始乘客或先送拼车乘客(1:先送拼车乘客，2：先送原始乘客)，从Gj节点到request.Ls节点再到request.Ld(car.Ld)节点再到car.Ld(request.Ld)节点的距离]
+        car_best:得到的最优出租车[车辆id，在Gj节点去接拼车乘客，到达Gj节点的时间，先送原始乘客或先送拼车乘客(1:先送拼车乘客，2：先送原始乘客)，从Gj节点到request.Ls节点再到request.Ld(car.Ld)节点再到car.Ld(request.Ld)节点的距离]
         request:一个用户请求
 '''
 def after_match(car_best, request):
+    # print('匹配成功后相关处理')
     car = car_best[0]
+    #判断车辆状态信息是否已经改变了
+    if is_carstate_change(car, DataOperate.get_car(car.id)):
+        return False
     Gj = car_best[1]
     arrive_Gj_datetime = car_best[2]
     situation = car_best[3]
@@ -394,7 +419,7 @@ def after_match(car_best, request):
         NodeUtils.remove_carstate(pathj_Ld, car.id)
 
 
-    #拿到Gj节点->request.Ls节点->request.Ld节点
+    #拿到Gj节点->request.Ls节点->request.Ld节点的路径
     if situation == 0:
         share_path = get_first_path(Gj, request.Ls, request.Ld)
         car.Ld = request.Ld
@@ -422,6 +447,7 @@ def after_match(car_best, request):
     #提交定时任务，在车辆到达新目的地的时候执行
     ApschedulerClient.arrival_job(arrive_target_datetime, car.id, distLs_Ld)
 
+    return True
 
 
 '''
@@ -432,10 +458,11 @@ def after_match(car_best, request):
 def matching_car(request):
     print('正在为id为%s的请求匹配车辆,请求的出发地为%s，目的地为%s，出发时间为%s' %(request.id, request.Ls, request.Ld, request.Tp))
     execute_datetime = str(DatetimeUtils.datetime_add(DatetimeUtils.cur_datetime(), 0.5))
+    can_endure_datetime = str(DatetimeUtils.datetime_add(request.Tp, 10))
     #需要做相关判断，如集合为空等
     car_start = origin_match(request)
     if not car_start:
-        if request.Tp + 10 > execute_datetime:
+        if can_endure_datetime > execute_datetime:
             print('已超过请求出发时间10分钟，该请求将不再被执行')
             return
         print('在请求出发地附近找不到匹配车辆,请求将在30s后再次被执行')
@@ -444,7 +471,7 @@ def matching_car(request):
         return
     car_end = target_match(request, car_start)
     if not car_end:
-        if request.Tp + 10 > execute_datetime:
+        if can_endure_datetime > execute_datetime:
             print('已超过请求出发时间10分钟，该请求将不再被执行')
             return
         print('找不到合适的车辆，请求将在30s后再次被执行')
@@ -453,19 +480,42 @@ def matching_car(request):
         return
     car_best = optimal_solution(car_end, request)
     if not car_best:
-        if request.Tp + 10 > execute_datetime:
+        if can_endure_datetime > execute_datetime:
             print('已超过请求出发时间10分钟，该请求将不再被执行')
             return
         print('找不到合适的车辆，请求将在30s后再次被执行')
         # 提交定时任务
         ApschedulerClient.handle_request_job(request.id, execute_datetime)
         return
-    after_match(car_best, request)
+    is_success = after_match(car_best, request)
+    if is_success == False:
+        if can_endure_datetime > execute_datetime:
+            print('已超过请求出发时间10分钟，该请求将不再被执行')
+            return
+        print('找不到合适的车辆，请求将在30s后再次被执行')
+        # 提交定时任务
+        ApschedulerClient.handle_request_job(request.id, execute_datetime)
+        return
     print('已为id为%s的请求匹配到车辆，车辆id为%s' %(request.id, car_best[0].id))
 
 
 if __name__ == "__main__":
     pass
+    #测试is_carstate_change方法
+    #def __init__(self, id, Pc, Ls, Ld, batch_numbers, Battery, is_recharge):
+    # using_car = Car(0, 0, 0, 0, 0, 60, 0)
+    # real_car = Car(0, 2, 0, 234, 1, 60, 0)
+    # is_change = is_carstate_change(using_car, real_car)
+    # print(is_change)
+
+    #测试匹配算法
+    request0 = DataOperate.get_request(0)
+    request1 = DataOperate.get_request(1)
+    print('request = %s' % request0)
+    print('request = %s' % request1)
+    matching_car(request0)
+    matching_car(request1)
+
     #测试定时任务
     # ApschedulerClient.arrival_job('2020-03-31 19:21:00', 0)
     # job = ApschedulerClient.get_job('0')
@@ -479,9 +529,22 @@ if __name__ == "__main__":
     # print(type(charging_datetime))
 
     #测试fastest_charging_datetime方法
-    for i in range(1425):
-        fcd, target = fastest_charging_datetime(i, 10)
-        print(fcd, target)
+    # for i in range(1425):
+    #     fcd, target = fastest_charging_datetime(i, 10)
+    #     print(fcd, target)
+
+    #测试get_first_path方法
+    # first_path = get_first_path(1419, 1084, 621)
+    # print(first_path)
+    # cur_dist = 0
+    # pre = first_path[0]
+    # for Gc in first_path[1:]:
+    #     print(cur_dist)
+    #     cur_dist += NodeUtils.get_dist(pre, Gc)
+    #     pre = Gc
+    # print(cur_dist)
+    # NodeUtils.add_carstate(first_path, 80, 1424, '2020-04-07 01:28:00')
+
 
     # share_path = []
     # pathj_Ls = [1, 4, 3]
