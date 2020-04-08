@@ -162,21 +162,21 @@ if __name__ == "__main__":
     # print(dist)
 
     #测试find_all_badnode方法
-    # badnode = find_all_badnode(1426)
-    # print(badnode)
+    badnode = find_all_badnode(1426)
+    print(badnode)
 
     #测试get_dist方法
-    dist1 = get_dist(1421, 1108)
-    dist2 = get_dist(1108, 1421)
-    print('dist1 = %s, dist2 = %s' %(dist1, dist2))
-    min = None
-    for i in range(1426):
-        if i == 1108:
-            continue
-        dist = get_dist(i, 1108)
-        if min == None or dist < min:
-            min = dist
-    print(min)
+    # dist1 = get_dist(1421, 1108)
+    # dist2 = get_dist(1108, 1421)
+    # print('dist1 = %s, dist2 = %s' %(dist1, dist2))
+    # min = None
+    # for i in range(1426):
+    #     if i == 1108:
+    #         continue
+    #     dist = get_dist(i, 1108)
+    #     if min == None or dist < min:
+    #         min = dist
+    # print(min)
     #测试get_path方法
     # paht1 = get_path(0, 892)
     # path2 = get_path(892, 0)

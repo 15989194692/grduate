@@ -62,7 +62,6 @@ def recharged(carid, dist):
         #5.1.1 计算出到哪个充电站充电可以最快完成充电,方法中顺便修改充电站的状态信息,fastest_charging_datetime(str)
         fastest_charging_datetime,target = MatchingAlgorithm.fastest_charging_datetime(car.Ld, car.Battery)
 
-
         car.Ld = target
         car.Ls = car.Ld
         car.is_recharge = 1
@@ -72,16 +71,16 @@ def recharged(carid, dist):
         #车辆状态信息
         carstate = [carid, fastest_charging_datetime, 1]
 
+        # 在节点车辆状态表上拼接一行车辆状态信息
+        DataOperate.append_carstate(car.Ld, carstate)
 
     #不需要充电
     else:
         car.Ls = car.Ld
         car.is_recharge = 0
         # 车辆状态信息
-        carstate = [carid, now_datetime, 1]
+        # carstate = [carid, now_datetime, 1]
 
-    # 5.在节点车辆状态表上拼接一行车辆状态信息
-    DataOperate.append_carstate(car.Ld, carstate)
     #6.修改车辆信息
     DataOperate.update_car(car)
 

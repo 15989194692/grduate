@@ -227,7 +227,8 @@ def random_request(hour):
     #4.随机生成出发地和目的地
     Ls, Ld = MathUtils.random_sour_targ()
     #5.生成Request对象
-    request = Request(Tp, Ls, Pr, Ld)
+    #def __init__(self, Tp, Ls, Pr, Ld, is_match_successful):
+    request = Request(Tp, Ls, Pr, Ld, 0)
     #6.写入到文件中
     DataOperate.update_request(request)
     #7.提交定时任务到定时任务服务器
@@ -263,8 +264,66 @@ def create_empty_txt():
     # 遍历文件夹下的所有文件
     print(os.listdir())
 
+
+'''
+计算出其他节点到本节点的距离的排序，eg:0节点文件 [0, 2, 4, 1, 3]表示0节点到0节点距离最近，2节点排第二近，依次类推，写入到文件中
+'''
+def others_to_cur_dist_sort(size = 1426):
+    print('开始计算其他节点到本节点的距离的排序，共有%s个节点' %size)
+    for cur in range(size):
+        print('开始计算其他节点到第%s个节点的距离的排序' % cur)
+        others_to_cur_dists = []
+
+        for other in range(size):
+            dist = NodeUtils.get_dist(other, cur)
+            others_to_cur_dists.append(dist)
+
+        new_others_to_cur_dists = sorted(others_to_cur_dists)
+        res = []
+        exist = np.zeros(1426, dtype='int16')
+        for others_to_cur_dist in new_others_to_cur_dists:
+            index = others_to_cur_dists.index(others_to_cur_dist)
+            while exist[index] == 1:
+                index = others_to_cur_dists.index(others_to_cur_dist, index + 1)
+            exist[index] = 1
+            res.append(index)
+        print('开始写入第%s个节点的距离的排序' % cur)
+        # print('res = %s' %res[:20])
+        #将res写入到文件中
+        with open('sortdistances/sortdistance' + str(cur) + '.txt', 'w') as f:
+            f.write(str(res) + '\n')
+        # break
+
+def test():
+    list = [0, 2, 1, 4, 3, 9, 10, 5, 7]
+    maps = {}
+    for i in range(len(list)):
+        dist = list[i]
+        maps[str(dist)] = i
+
+    list.sort()
+    res = []
+    for dist in list:
+        res.append(maps[str(dist)])
+
+    return res
+
 if __name__ == "__main__":
     pass
+    #测试test
+    # res = test()
+    # print(res)
+
+    #测试index
+    # list = [1, 2, 3, 2, 3]
+    # index = list.index(2)
+    # new_index = list.index(2, index + 1)
+    # print(index)
+    # print(new_index)
+
+    #测试others_to_cur_dist_sort方法
+    others_to_cur_dist_sort()
+
     # init_chargings_state()
 
     # init_car()
@@ -280,7 +339,7 @@ if __name__ == "__main__":
     #     cars.append(car)
     #
     # print('test')
-    init_data()
+    # init_data()
     # maps, list = data2map()
     # print(len(maps))
     # cars = init_car()

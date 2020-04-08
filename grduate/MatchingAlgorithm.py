@@ -6,7 +6,8 @@ import DataOperate
 import ApschedulerClient
 import DatetimeUtils
 import MathUtils
-from Car import Car
+
+
 
 '''
 算出从request_Ls到目的地Ld1再从Ld1到Ld2的总距离
@@ -206,17 +207,17 @@ def origin_match(request):
     vis = np.zeros(1200, dtype="int16")
     #1.获取请求的出发地和目的地
     request_Ls = request.Ls
-    # Ld = request.Ld
-    # Rp = get_path(Ls, Ld)
-    #2.对于request的出发地Ls，将其对应到所在的节点Gp1，由前面计算好的节点间距离可以得到Gp1节点到其他节点的距离distance
-    # distance = get_distance(Ls)
-    #3.对于其中的每个可达节点，选出能在用户要求时间内接到用户的车辆：
-    for i in range(0, 1426):
+    can_endure_datetime = str(DatetimeUtils.datetime_add(request.Tp, 10))
+    # 2.获取距离request.Ls节点由近到远的节点list结合
+    sort_node = DataOperate.get_sort_node(request_Ls)
+
+    # 3.对于其中的每个可达节点，选出能在用户要求时间内接到用户的车辆：
+    for i in sort_node:
         # 节点i到节点Ls的最短距离 单位：m
         dist = NodeUtils.get_dist(i, request_Ls)
         #判断i节点是否能到达request.Ls节点，即用户的出发节点, and 两个节点的距离小于等于 5000m
-        if dist < 0 or dist > 5000:
-            continue
+        if dist > 5000:
+            break
         #拿到i节点的车辆状态表[[车辆编号, 预计到达该节点时间,该节点是否为目的地(0:否，1:是)], ...]
         carstate = DataOperate.get_carstate(i)
         for state in carstate:
@@ -233,9 +234,15 @@ def origin_match(request):
             #判断车辆是否正在充电
             if car.is_recharge == 1:
                 continue
-            #如果车辆当前的乘客批数为0，即没有乘客的话，那么是符合条件的，不需要进行其他的判断了
+            # 车辆从节点i到节点Ls所需行驶时间 假设速度恒定为：60km/h -> 1000m/min
+            ti_Ls = dist / 1000
+            #车辆到达request.Ls节点的时间
+            arrive_Ls_datetime = str(DatetimeUtils.datetime_add(arrive_datetime, ti_Ls))
+            #如果车辆当前的乘客批数为0，即没有乘客的话，那么只需判断能否按时到达请求出发地，不需要进行其他的判断了
             if car.batch_numbers == 0:
-                car_start.append([car, i, DatetimeUtils.cur_datetime()])
+                # 判断能否在规定时间到达request.Ls节点
+                if arrive_Ls_datetime <= can_endure_datetime:
+                    car_start.append([car, i, DatetimeUtils.cur_datetime()])
                 continue
             #如果车辆已有两批乘客在拼车，则不考虑
             if car.batch_numbers > 1:
@@ -243,13 +250,11 @@ def origin_match(request):
             #如果车辆的座位数不能满足乘客的要求
             if car.Pc + request.Pr > 3:
                 continue
-            #车辆从节点i到节点Ls所需行驶时间 假设速度恒定为：60km/h -> 1000m/min
-            ti_Ls = dist / 1000
+
 
             #判断车辆carid到i节点的时间 + 车辆从节点i到节点Ls所需的行驶时间 <= 用户请求的出发时间Tp + 用户可以容忍的等待时间Ts(定值 10min)
-            can_endure_datetime = str(DatetimeUtils.datetime_add(request.Tp, 10))
-            arrive_Ls_datetime = str(DatetimeUtils.datetime_add(arrive_datetime, ti_Ls))
-            if arrive_Ls_datetime <=  can_endure_datetime:
+
+            if arrive_Ls_datetime <= can_endure_datetime:
                 car_start.append([car, i, arrive_datetime])
     # print('car_start = %s' % car_start)
     return car_start
@@ -444,6 +449,10 @@ def after_match(car_best, request):
     # 更新车辆信息，特别是batch_numbers
     DataOperate.update_car(car)
 
+    #更新请求为已匹配成功
+    request.is_match_successful = 1
+    DataOperate.update_request(request)
+
     #提交定时任务，在车辆到达新目的地的时候执行
     ApschedulerClient.arrival_job(arrive_target_datetime, car.id, distLs_Ld)
 
@@ -457,39 +466,49 @@ def after_match(car_best, request):
 '''
 def matching_car(request):
     print('正在为id为%s的请求匹配车辆,请求的出发地为%s，目的地为%s，出发时间为%s' %(request.id, request.Ls, request.Ld, request.Tp))
+    #如果匹配不上，下次请求再次被执行的时间
     execute_datetime = str(DatetimeUtils.datetime_add(DatetimeUtils.cur_datetime(), 0.5))
+    #请求能忍受的最大时间，若超过这个时间，那么这个请求就将不再被执行了
     can_endure_datetime = str(DatetimeUtils.datetime_add(request.Tp, 10))
     #需要做相关判断，如集合为空等
+    # 1.进行出发地匹配
     car_start = origin_match(request)
     if not car_start:
-        if can_endure_datetime > execute_datetime:
+        if can_endure_datetime < execute_datetime:
             print('已超过请求出发时间10分钟，该请求将不再被执行')
+            #将没有匹配上的请求写入到文件中
             return
         print('在请求出发地附近找不到匹配车辆,请求将在30s后再次被执行')
         #提交定时任务
         ApschedulerClient.handle_request_job(request.id, execute_datetime)
         return
+
+    # 2.进行目的地匹配
     car_end = target_match(request, car_start)
     if not car_end:
-        if can_endure_datetime > execute_datetime:
+        if can_endure_datetime < execute_datetime:
             print('已超过请求出发时间10分钟，该请求将不再被执行')
             return
         print('找不到合适的车辆，请求将在30s后再次被执行')
         #提交定时任务
         ApschedulerClient.handle_request_job(request.id, execute_datetime)
         return
+
+    # 3.选取最优解(优先拼车中择优，否则在空车中择优)
     car_best = optimal_solution(car_end, request)
     if not car_best:
-        if can_endure_datetime > execute_datetime:
+        if can_endure_datetime < execute_datetime:
             print('已超过请求出发时间10分钟，该请求将不再被执行')
             return
         print('找不到合适的车辆，请求将在30s后再次被执行')
         # 提交定时任务
         ApschedulerClient.handle_request_job(request.id, execute_datetime)
         return
+
+    # 4.匹配成功后相关处理，eg：更新节点的车辆状态表，如果匹配上的车状态发生改变的话，那么会返回False，执行成功返回True
     is_success = after_match(car_best, request)
     if is_success == False:
-        if can_endure_datetime > execute_datetime:
+        if can_endure_datetime < execute_datetime:
             print('已超过请求出发时间10分钟，该请求将不再被执行')
             return
         print('找不到合适的车辆，请求将在30s后再次被执行')

@@ -6,10 +6,12 @@ from Request import Request
 import json
 import pandas as pd
 import DatetimeUtils
+import numpy as np
 
 #文件路径
 paths_file_path = 'paths/path'
 distances_file_path = 'distances/distance'
+sortdistances_file_path = 'sortdistances/sortdistance'
 cars_file_path = 'cars/car'
 carstates_file_path = 'carstates/carstate'
 chargings_file_path = 'chargings/chargings'
@@ -152,8 +154,8 @@ def get_request(requestId):
     with open(requests_file_path + str(requestId) + suffix, 'r') as f:
         for line in f:
             request = ast.literal_eval(line.rstrip("\n"))
-    #def __init__(self, Tp, Ls, Pr, Ld)
-    r = Request(request[1], request[2], request[3], request[4])
+    #def __init__(self, Tp, Ls, Pr, Ld, is_match_successful):
+    r = Request(request[1], request[2], request[3], request[4], request[5])
     r.id = request[0]
     return r
 
@@ -245,10 +247,68 @@ def clear_carstates(start = 0, end = 1426):
             f.truncate()
 
 
+'''
+获取距离sourcedId由近到远的节点顺序，eg:[0, 4, 1, 2, 3] 0节点距离sourcedId节点最近，4节点次之，依次类推
+    input:
+        sourcedId:距离哪个节点
+
+'''
+def get_sort_node(sourcedId):
+    with open(sortdistances_file_path + str(sourcedId) + suffix, 'r') as f:
+        for line in f:
+            sortdistances_nodes = ast.literal_eval(line.rstrip("\n"))
+    return sortdistances_nodes
+
+
+'''
+更新距离sourcedId由近到远的节点顺序
+    input:
+        sourcedId:距离哪个节点
+        sortdistances_nodes:要更新的内容
+'''
+def update_sort_node(sourcedId, sortdistances_nodes):
+    with open(sortdistances_file_path + str(sourcedId) + suffix, 'w') as f:
+        f.write(str(sortdistances_nodes) + '\n')
+
+
+def test_sort_node(size = 1426):
+    for i in range(size):
+        sortdistances_nodes = get_sort_node(i)
+        exist = np.zeros(1426, dtype='int16')
+        for id in sortdistances_nodes:
+            if exist[id] == 1:
+                print('i = %s, id = %s' %(i, id))
+            else:
+                exist[id] = 1
+
+
+
 if __name__ == "__main__":
     pass
+    #测试get_sort_node方法
+    # sortdistances_nodes = get_sort_node(0)
+    # sortdistances_nodes[306] = 659
+    # update_sort_node(0, sortdistances_nodes)
+    # exist = np.zeros(1426, dtype='int16')
+    # for id in sortdistances_nodes:
+    #     if exist[id] == 1:
+    #         print(id)
+    #     else:
+    #         exist[id] = 1
+    # for i in range(1426):
+    #     id = sortdistances_nodes[i]
+    #     if id == 370:
+    #         print(i)
+    # for i in range(1426):
+        #     if exist[i] == 0:
+        #         print(i)
+
+    #测试test_sort_node方法
+    # test_sort_node()
+
+
     #测试clear_carstates方法
-    clear_carstates()
+    # clear_carstates()
 
     #测试get_data_from_csv
     # data,rows = get_data_from_csv()
@@ -283,8 +343,8 @@ if __name__ == "__main__":
     # print("id : %s, Tp : %s, Ls : %s, Pr : %s, Ld : %s," % (request.id, request.Tp, request.Ls, request.Pr, request.Ld))
 
     #测试get_carstate方法
-    carstate = get_carstate(51)
-    print(carstate)
+    # carstate = get_carstate(51)
+    # print(carstate)
 
     #测试update_carstate方法
     # update_carstate(0, [[0, datetime.now().strftime("%F %T"), 1]])
